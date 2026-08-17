@@ -63,9 +63,46 @@ export class EthereumAdapter extends BaseBlockchainAdapter {
     const lower = address.toLowerCase();
     let hashes = this.addressTxMap.get(lower) || [];
 
+    // Attempt live Ethereum Mainnet indexer fetch if not in local store
     if (hashes.length === 0 && this.validateAddress(address)) {
-      this.synthesizeDynamicEthTxs(address);
+      try {
+        const res = await fetch(`https://eth.blockscout.com/api/v2/addresses/${address}/transactions`);
+        if (res.ok) {
+          const data: any = await res.json();
+          if (data.items && Array.isArray(data.items) && data.items.length > 0) {
+            const liveTxs: NormalizedTransaction[] = data.items.slice(0, 20).map((tx: any) => {
+              const wei = tx.value || "0";
+              let ethVal = "0.0000";
+              try {
+                ethVal = (Number(BigInt(wei) / 10000000000n) / 1e8).toFixed(4);
+              } catch {}
+              return {
+                id: `eth-${tx.hash}`,
+                chain: "ethereum",
+                txHash: tx.hash,
+                blockNumber: tx.block_number,
+                timestamp: new Date(tx.timestamp || Date.now()),
+                from: [tx.from?.hash || address],
+                to: [tx.to?.hash || "0x0000000000000000000000000000000000000000"],
+                asset: "ETH",
+                amount: wei,
+                formattedAmount: `${ethVal} ETH`,
+                status: "confirmed",
+                isContractCall: !!tx.to?.is_contract,
+                metadata: { source: "mainnet_live" },
+              };
+            });
+            this.seedData(liveTxs);
+          }
+        }
+      } catch {}
+
+      // If still empty after live attempt, synthesize realistic multi-hop forensic path
       hashes = this.addressTxMap.get(lower) || [];
+      if (hashes.length === 0) {
+        this.synthesizeDynamicEthTxs(address);
+        hashes = this.addressTxMap.get(lower) || [];
+      }
     }
 
     let transactions = hashes
