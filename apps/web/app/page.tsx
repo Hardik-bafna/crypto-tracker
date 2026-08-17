@@ -179,6 +179,15 @@ export default function Home() {
 
         {/* Tab Contents */}
         <div className="flex-1 flex relative min-h-0 overflow-hidden">
+          {isLoading && !investigation && (
+            <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                <span>Initializing forensic transaction graph...</span>
+              </div>
+            </div>
+          )}
+
           {activeTab === "graph" && investigation?.graph && (
             <div className="flex-1 flex w-full h-full relative">
               <GraphCanvas

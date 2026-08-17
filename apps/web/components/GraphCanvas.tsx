@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useEffect } from "react";
 import {
   ReactFlow,
   Controls,
@@ -14,6 +14,7 @@ import {
   EdgeTypes,
   BackgroundVariant,
 } from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 import { GraphData, GraphNode, GraphEdge } from "@crypto-tracer/types";
 import { CustomNode } from "./CustomNode";
 import { CustomEdge } from "./CustomEdge";
@@ -46,7 +47,6 @@ export const GraphCanvas: React.FC<Props> = ({
 
     // Group nodes by hopLevel or BFS layer
     const layerMap = new Map<number, GraphNode[]>();
-    const unlayered: GraphNode[] = [];
 
     graphData.nodes.forEach((node) => {
       const hop = node.hopLevel ?? (node.isTarget ? 0 : 1);
@@ -57,7 +57,7 @@ export const GraphCanvas: React.FC<Props> = ({
 
     const sortedHops = Array.from(layerMap.keys()).sort((a, b) => a - b);
     const X_SPACING = 340;
-    const Y_SPACING = 140;
+    const Y_SPACING = 150;
 
     sortedHops.forEach((hop) => {
       const nodesInHop = layerMap.get(hop) || [];
@@ -69,8 +69,8 @@ export const GraphCanvas: React.FC<Props> = ({
           id: node.address.toLowerCase(),
           type: "custom",
           position: {
-            x: hop * X_SPACING + 80,
-            y: startY + idx * Y_SPACING + 250,
+            x: hop * X_SPACING + 100,
+            y: startY + idx * Y_SPACING + 280,
           },
           data: {
             ...node,
@@ -96,8 +96,14 @@ export const GraphCanvas: React.FC<Props> = ({
     return { initialNodes: nodes, initialEdges: edges };
   }, [graphData, selectedNodeId]);
 
-  const [nodes, , onNodesChange] = useNodesState(initialNodes);
-  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  // Synchronize internal React Flow state when graphData updates
+  useEffect(() => {
+    setNodes(initialNodes);
+    setEdges(initialEdges);
+  }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
@@ -123,10 +129,12 @@ export const GraphCanvas: React.FC<Props> = ({
   }, [onSelectNode, onSelectEdge]);
 
   return (
-    <div className="w-full h-full relative bg-[#0b0f19]">
+    <div className="w-full h-full min-h-[500px] relative bg-[#0b0f19]">
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodeClick={handleNodeClick}
