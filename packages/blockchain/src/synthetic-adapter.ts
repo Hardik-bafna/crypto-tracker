@@ -452,7 +452,14 @@ export class SyntheticBlockchainAdapter extends BaseBlockchainAdapter {
     options?: PaginationOptions
   ): Promise<NormalizedTransaction[]> {
     const lower = address.toLowerCase();
-    const hashes = this.addressMap.get(lower) || [];
+    let hashes = this.addressMap.get(lower) || [];
+
+    // If an unknown address is queried in demo/offline mode, dynamically synthesize a realistic multi-hop forensic path
+    if (hashes.length === 0 && this.validateAddress(address)) {
+      this.synthesizeDynamicCaseForAddress(address);
+      hashes = this.addressMap.get(lower) || [];
+    }
+
     let list = hashes
       .map((h) => this.txMap.get(h))
       .filter((t): t is NormalizedTransaction => !!t);
@@ -485,6 +492,109 @@ export class SyntheticBlockchainAdapter extends BaseBlockchainAdapter {
       formattedBalance: this.chain === "bitcoin" ? "12.5000 BTC" : "12.5000 ETH",
       txCount: txs.length,
     };
+  }
+
+  private synthesizeDynamicCaseForAddress(address: string): void {
+    const isEth = address.startsWith("0x");
+    const baseTime = Date.now() - 4 * 3600 * 1000;
+    const isBtc = !isEth;
+
+    // Generate dynamic multi-hop chain: Target -> Intermediate 1 -> Mixer / Aggregator -> Intermediate 2 -> Exchange
+    const hop1 = isEth ? `0x${address.slice(2, 10)}11111111111111111111111111111111` : `bc1qhop1${address.slice(7, 15)}11111111111111111111111111`;
+    const hop2 = isEth ? `0x${address.slice(2, 10)}22222222222222222222222222222222` : `bc1qhop2${address.slice(7, 15)}22222222222222222222222222`;
+    const mixerOrBridge = isEth
+      ? "0xd90e2f925da726b50c4ed8d0fb90ad053324f31b" // Tornado Cash
+      : "bc1qaggregator999999999999999999999999999";
+    const hop3 = isEth ? `0x${address.slice(2, 10)}33333333333333333333333333333333` : `bc1qhop3${address.slice(7, 15)}33333333333333333333333333`;
+    const exchange = isEth
+      ? "0x28c6c06298d514db089934071355e5743bf21d60" // Binance
+      : "bc1qkraken00000000000000000000000000000000"; // Kraken
+
+    const asset = isEth ? "ETH" : "BTC";
+    const amountVal = isEth ? "85.50" : "14.25";
+
+    const dynamicTxs: NormalizedTransaction[] = [
+      {
+        id: `tx-dyn-${address.slice(0, 8)}-1`,
+        chain: isEth ? "ethereum" : "bitcoin",
+        txHash: `0x${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`.padEnd(66, "0"),
+        timestamp: new Date(baseTime),
+        from: [address],
+        to: [hop1],
+        asset,
+        amount: isEth ? "85500000000000000000" : "1425000000",
+        formattedAmount: `${amountVal} ${asset}`,
+        status: "confirmed",
+        metadata: { dynamic: true, step: 1, note: "Initial Outflow" },
+      },
+      {
+        id: `tx-dyn-${address.slice(0, 8)}-2`,
+        chain: isEth ? "ethereum" : "bitcoin",
+        txHash: `0x${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`.padEnd(66, "0"),
+        timestamp: new Date(baseTime + 15 * 60 * 1000),
+        from: [hop1],
+        to: [hop2],
+        asset,
+        amount: isEth ? "80000000000000000000" : "1350000000",
+        formattedAmount: isEth ? "80.00 ETH" : "13.50 BTC",
+        status: "confirmed",
+        metadata: { dynamic: true, step: 2, note: "Peel Chain Intermediary" },
+      },
+      {
+        id: `tx-dyn-${address.slice(0, 8)}-3`,
+        chain: isEth ? "ethereum" : "bitcoin",
+        txHash: `0x${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`.padEnd(66, "0"),
+        timestamp: new Date(baseTime + 35 * 60 * 1000),
+        from: [hop2],
+        to: [mixerOrBridge],
+        asset,
+        amount: isEth ? "78000000000000000000" : "1300000000",
+        formattedAmount: isEth ? "78.00 ETH" : "13.00 BTC",
+        status: "confirmed",
+        metadata: { dynamic: true, step: 3, note: isEth ? "Mixer Deposit" : "Aggregation Node" },
+      },
+      {
+        id: `tx-dyn-${address.slice(0, 8)}-4`,
+        chain: isEth ? "ethereum" : "bitcoin",
+        txHash: `0x${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`.padEnd(66, "0"),
+        timestamp: new Date(baseTime + 120 * 60 * 1000),
+        from: [mixerOrBridge],
+        to: [hop3],
+        asset,
+        amount: isEth ? "76000000000000000000" : "1280000000",
+        formattedAmount: isEth ? "76.00 ETH" : "12.80 BTC",
+        status: "confirmed",
+        metadata: { dynamic: true, step: 4, note: "Post-Mixer Withdrawal Hop" },
+      },
+      {
+        id: `tx-dyn-${address.slice(0, 8)}-5`,
+        chain: isEth ? "ethereum" : "bitcoin",
+        txHash: `0x${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`.padEnd(66, "0"),
+        timestamp: new Date(baseTime + 180 * 60 * 1000),
+        from: [hop3],
+        to: [exchange],
+        asset,
+        amount: isEth ? "75000000000000000000" : "1250000000",
+        formattedAmount: isEth ? "75.00 ETH" : "12.50 BTC",
+        status: "confirmed",
+        metadata: { dynamic: true, step: 5, note: "Cashout Deposit to Exchange" },
+      },
+    ];
+
+    for (const tx of dynamicTxs) {
+      this.transactions.push(tx);
+      this.txMap.set(tx.txHash.toLowerCase(), tx);
+      const addresses = new Set<string>();
+      tx.from.forEach((a) => addresses.add(a.toLowerCase()));
+      tx.to.forEach((a) => addresses.add(a.toLowerCase()));
+      for (const addr of addresses) {
+        const list = this.addressMap.get(addr) || [];
+        if (!list.includes(tx.txHash.toLowerCase())) {
+          list.push(tx.txHash.toLowerCase());
+          this.addressMap.set(addr, list);
+        }
+      }
+    }
   }
 
   getAllSyntheticTransactions(): NormalizedTransaction[] {
