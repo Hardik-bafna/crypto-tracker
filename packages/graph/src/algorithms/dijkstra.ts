@@ -1,4 +1,4 @@
-import { TransactionGraph } from "../graph-model.js";
+import { TransactionGraph } from "../graph-model";
 import { GraphEdge, PathResult } from "@crypto-tracer/types";
 
 export function dijkstraShortestPath(

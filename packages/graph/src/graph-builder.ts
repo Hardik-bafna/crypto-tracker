@@ -4,7 +4,7 @@ import {
   GraphEdge,
   BlockchainAdapter,
 } from "@crypto-tracer/types";
-import { TransactionGraph } from "./graph-model.js";
+import { TransactionGraph } from "./graph-model";
 
 export class GraphBuilder {
   /**

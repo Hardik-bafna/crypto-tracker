@@ -1,4 +1,4 @@
-import { TransactionGraph } from "../graph-model.js";
+import { TransactionGraph } from "../graph-model";
 import { GraphNode } from "@crypto-tracer/types";
 
 export interface BFSResult {

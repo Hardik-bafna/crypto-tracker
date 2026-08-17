@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EvidenceSchema } from "./analysis.js";
+import { EvidenceSchema } from "./analysis";
 
 export const AIToolNameEnum = z.enum([
   "get_wallet",

@@ -29,7 +29,7 @@ export class RiskEngine {
 
   evaluate(params: {
     target: string;
-    targetType?: "address" | "transaction" | "cluster" | "investigation";
+    targetType?: "address" | "transaction" | "txHash" | "cluster" | "investigation";
     patterns: PatternDetectionResult[];
     evidence: Evidence[];
     nodes?: GraphNode[];

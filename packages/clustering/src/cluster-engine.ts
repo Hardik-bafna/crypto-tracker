@@ -2,9 +2,9 @@ import {
   WalletCluster,
   NormalizedTransaction,
 } from "@crypto-tracer/types";
-import { applyCommonInputHeuristic } from "./heuristics/common-input.js";
-import { detectChangeAddresses } from "./heuristics/change-address.js";
-import { detectTemporalCoActivity } from "./heuristics/temporal.js";
+import { applyCommonInputHeuristic } from "./heuristics/common-input";
+import { detectChangeAddresses } from "./heuristics/change-address";
+import { detectTemporalCoActivity } from "./heuristics/temporal";
 
 export class ClusterEngine {
   clusterWallets(

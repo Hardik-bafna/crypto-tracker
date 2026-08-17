@@ -1,1 +1,1 @@
-export * from "./risk-engine.js";
+export * from "./risk-engine";

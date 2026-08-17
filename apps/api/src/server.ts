@@ -2,11 +2,11 @@ import Fastify, { FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
-import { InvestigationService } from "./services/investigation-service.js";
-import { createInvestigationRoutes } from "./routes/investigations.js";
-import { createAIRoutes } from "./routes/ai.js";
-import { createEntityRoutes } from "./routes/entities.js";
-import { createBlockchainRoutes } from "./routes/blockchain.js";
+import { InvestigationService } from "./services/investigation-service";
+import { createInvestigationRoutes } from "./routes/investigations";
+import { createAIRoutes } from "./routes/ai";
+import { createEntityRoutes } from "./routes/entities";
+import { createBlockchainRoutes } from "./routes/blockchain";
 
 export function buildServer(): { app: FastifyInstance; service: InvestigationService } {
   const app = Fastify({

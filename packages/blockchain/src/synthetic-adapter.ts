@@ -4,7 +4,7 @@ import {
   AddressBalance,
   TokenTransfer,
 } from "@crypto-tracer/types";
-import { BaseBlockchainAdapter } from "./base-adapter.js";
+import { BaseBlockchainAdapter } from "./base-adapter";
 
 export interface SyntheticDemoCase {
   id: string;

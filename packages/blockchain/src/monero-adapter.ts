@@ -3,7 +3,7 @@ import {
   PaginationOptions,
   AddressBalance,
 } from "@crypto-tracer/types";
-import { BaseBlockchainAdapter } from "./base-adapter.js";
+import { BaseBlockchainAdapter } from "./base-adapter";
 
 export class MoneroAdapter extends BaseBlockchainAdapter {
   readonly chain = "monero";

@@ -1,4 +1,4 @@
-import { TransactionGraph } from "../graph-model.js";
+import { TransactionGraph } from "../graph-model";
 
 export interface DFSResult {
   visitedNodes: string[];

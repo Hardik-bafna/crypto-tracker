@@ -1,8 +1,8 @@
 import { BlockchainAdapter } from "@crypto-tracer/types";
-import { BitcoinAdapter } from "./bitcoin-adapter.js";
-import { EthereumAdapter } from "./ethereum-adapter.js";
-import { SyntheticBlockchainAdapter } from "./synthetic-adapter.js";
-import { MoneroAdapter } from "./monero-adapter.js";
+import { BitcoinAdapter } from "./bitcoin-adapter";
+import { EthereumAdapter } from "./ethereum-adapter";
+import { SyntheticBlockchainAdapter } from "./synthetic-adapter";
+import { MoneroAdapter } from "./monero-adapter";
 
 export class BlockchainAdapterFactory {
   private static adapters: Map<string, BlockchainAdapter> = new Map();

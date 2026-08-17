@@ -5,13 +5,13 @@ import {
   Evidence,
   PatternRuleConfig,
 } from "@crypto-tracer/types";
-import { detectFanOut } from "./rules/fan-out.js";
-import { detectFanIn } from "./rules/fan-in.js";
-import { detectPeelChain } from "./rules/peel-chain.js";
-import { detectRapidMovement } from "./rules/rapid-movement.js";
-import { detectHighHop } from "./rules/high-hop.js";
-import { detectKnownServiceInteractions } from "./rules/known-service.js";
-import { detectCrossChain } from "./rules/cross-chain.js";
+import { detectFanOut } from "./rules/fan-out";
+import { detectFanIn } from "./rules/fan-in";
+import { detectPeelChain } from "./rules/peel-chain";
+import { detectRapidMovement } from "./rules/rapid-movement";
+import { detectHighHop } from "./rules/high-hop";
+import { detectKnownServiceInteractions } from "./rules/known-service";
+import { detectCrossChain } from "./rules/cross-chain";
 
 export class PatternEngine {
   constructor(

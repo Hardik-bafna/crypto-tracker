@@ -4,9 +4,9 @@ import {
   Evidence,
   Investigation,
 } from "@crypto-tracer/types";
-import { ToolDispatcher } from "./tool-dispatcher.js";
-import { NLQueryParser } from "./nl-query-parser.js";
-import { ReportGenerator } from "./report-generator.js";
+import { ToolDispatcher } from "./tool-dispatcher";
+import { NLQueryParser } from "./nl-query-parser";
+import { ReportGenerator } from "./report-generator";
 
 export class AIInvestigator {
   constructor(private toolDispatcher: ToolDispatcher) {}

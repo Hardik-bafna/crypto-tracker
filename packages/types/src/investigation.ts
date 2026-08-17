@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { GraphDataSchema } from "./graph.js";
-import { RiskAssessmentSchema } from "./risk.js";
-import { EvidenceSchema, PatternDetectionResultSchema } from "./analysis.js";
-import { EntitySchema, AttributionItemSchema } from "./entities.js";
-import { WalletClusterSchema } from "./clustering.js";
+import { GraphDataSchema } from "./graph";
+import { RiskAssessmentSchema } from "./risk";
+import { EvidenceSchema, PatternDetectionResultSchema } from "./analysis";
+import { EntitySchema, AttributionItemSchema } from "./entities";
+import { WalletClusterSchema } from "./clustering";
 
 export const InvestigationStatusEnum = z.enum(["queued", "processing", "completed", "failed"]);
 export type InvestigationStatus = z.infer<typeof InvestigationStatusEnum>;
@@ -79,7 +79,7 @@ export const InvestigationReportSchema = z.object({
   chain: z.string(),
   generatedAt: z.coerce.date(),
   investigatorName: z.string(),
-  executiveSummary: stringExecutive => z.string().parse(stringExecutive),
+  executiveSummary: z.string(),
   observedFacts: z.array(z.string()),
   inferences: z.array(z.string()),
   attributions: z.array(AttributionItemSchema),

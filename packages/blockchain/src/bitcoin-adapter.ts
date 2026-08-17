@@ -5,7 +5,7 @@ import {
   UTXOInput,
   UTXOOutput,
 } from "@crypto-tracer/types";
-import { BaseBlockchainAdapter } from "./base-adapter.js";
+import { BaseBlockchainAdapter } from "./base-adapter";
 
 export class BitcoinAdapter extends BaseBlockchainAdapter {
   readonly chain = "bitcoin";

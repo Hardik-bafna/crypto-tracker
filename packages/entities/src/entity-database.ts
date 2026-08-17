@@ -1,5 +1,5 @@
 import { Entity, EntityAddressMapping, EntityType } from "@crypto-tracer/types";
-import { SEED_ENTITIES } from "./seed-data.js";
+import { SEED_ENTITIES } from "./seed-data";
 
 export class EntityDatabase {
   private entities: Map<string, Entity> = new Map();

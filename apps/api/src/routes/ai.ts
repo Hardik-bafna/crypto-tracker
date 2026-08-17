@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { AIQueryRequestSchema } from "@crypto-tracer/types";
-import { InvestigationService } from "../services/investigation-service.js";
+import { InvestigationService } from "../services/investigation-service";
 import { ToolDispatcher, AIInvestigator } from "@crypto-tracer/ai";
 
 export function createAIRoutes(service: InvestigationService): FastifyPluginAsync {

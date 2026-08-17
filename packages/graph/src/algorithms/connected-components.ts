@@ -1,4 +1,4 @@
-import { TransactionGraph } from "../graph-model.js";
+import { TransactionGraph } from "../graph-model";
 
 export function findConnectedComponents(graph: TransactionGraph): string[][] {
   const visited = new Set<string>();

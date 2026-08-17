@@ -12,7 +12,7 @@ export type ClusteringSignalType = z.infer<typeof ClusteringSignalTypeEnum>;
 
 export const ClusteringSignalSchema = z.object({
   type: ClusteringSignalTypeEnum,
-  description: stringDescription => z.string().parse(stringDescription),
+  description: z.string(),
   confidence: z.number().min(0).max(1),
   txHashes: z.array(z.string()).default([]),
 });

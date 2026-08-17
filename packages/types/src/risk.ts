@@ -17,7 +17,7 @@ export type RiskFactor = z.infer<typeof RiskFactorSchema>;
 
 export const RiskAssessmentSchema = z.object({
   target: z.string(),
-  targetType: z.enum(["address", "transaction", "cluster", "investigation"]),
+  targetType: z.enum(["address", "transaction", "txHash", "cluster", "investigation"]),
   overallScore: z.number().min(0).max(100),
   riskLevel: RiskLevelEnum,
   factors: z.array(RiskFactorSchema),

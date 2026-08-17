@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { CreateInvestigationRequestSchema } from "@crypto-tracer/types";
-import { InvestigationService } from "../services/investigation-service.js";
+import { InvestigationService } from "../services/investigation-service";
 import { SYNTHETIC_DEMO_CASES } from "@crypto-tracer/blockchain";
 
 export function createInvestigationRoutes(service: InvestigationService): FastifyPluginAsync {

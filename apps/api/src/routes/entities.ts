@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-import { InvestigationService } from "../services/investigation-service.js";
+import { InvestigationService } from "../services/investigation-service";
 import { EntityTypeEnum } from "@crypto-tracer/types";
 
 export function createEntityRoutes(service: InvestigationService): FastifyPluginAsync {

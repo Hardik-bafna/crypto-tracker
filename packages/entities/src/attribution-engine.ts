@@ -3,7 +3,7 @@ import {
   NormalizedTransaction,
   GraphEdge,
 } from "@crypto-tracer/types";
-import { EntityDatabase } from "./entity-database.js";
+import { EntityDatabase } from "./entity-database";
 
 export class AttributionEngine {
   constructor(private entityDb: EntityDatabase) {}
