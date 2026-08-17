@@ -1,0 +1,22 @@
+{
+  "name": "crypto-tracer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter @crypto-tracer/api dev",
+    "dev:web": "bun run --filter @crypto-tracer/web dev",
+    "dev:api": "bun run --filter @crypto-tracer/api dev",
+    "build": "bun run --filter \"*\" build",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.4",
+    "typescript": "^5.5.4"
+  }
+}

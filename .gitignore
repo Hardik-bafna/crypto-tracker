@@ -1,0 +1,10 @@
+node_modules
+.direnv
+.next
+out
+dist
+build
+.env
+.env.local
+*.log
+.DS_Store

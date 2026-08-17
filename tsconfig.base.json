@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@crypto-tracer/types": ["packages/types/src"],
+      "@crypto-tracer/blockchain": ["packages/blockchain/src"],
+      "@crypto-tracer/graph": ["packages/graph/src"],
+      "@crypto-tracer/analysis": ["packages/analysis/src"],
+      "@crypto-tracer/entities": ["packages/entities/src"],
+      "@crypto-tracer/clustering": ["packages/clustering/src"],
+      "@crypto-tracer/risk": ["packages/risk/src"],
+      "@crypto-tracer/ai": ["packages/ai/src"]
+    }
+  }
+}

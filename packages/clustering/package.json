@@ -1,0 +1,19 @@
+{
+  "name": "@crypto-tracer/clustering",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@crypto-tracer/types": "workspace:*",
+    "@crypto-tracer/graph": "workspace:*",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}
