@@ -8,35 +8,42 @@ export class BlockchainAdapterFactory {
   private static adapters: Map<string, BlockchainAdapter> = new Map();
   private static syntheticAdapter: SyntheticBlockchainAdapter = new SyntheticBlockchainAdapter();
 
-  static getAdapter(chain: string): BlockchainAdapter {
+  static getAdapter(chain: string, mode: "live" | "demo" = "live"): BlockchainAdapter {
     const normalizedChain = chain.toLowerCase().trim();
+    const cacheKey = `${normalizedChain}-${mode}`;
 
-    if (this.adapters.has(normalizedChain)) {
-      return this.adapters.get(normalizedChain)!;
+    if (this.adapters.has(cacheKey)) {
+      return this.adapters.get(cacheKey)!;
+    }
+
+    if (mode === "demo" || normalizedChain === "synthetic") {
+      this.adapters.set(cacheKey, this.syntheticAdapter);
+      return this.syntheticAdapter;
     }
 
     let adapter: BlockchainAdapter;
     switch (normalizedChain) {
       case "bitcoin":
       case "btc":
-        adapter = new BitcoinAdapter(this.syntheticAdapter.getAllSyntheticTransactions());
+        // Live mode: NO SYNTHETIC DATA
+        adapter = new BitcoinAdapter();
         break;
       case "ethereum":
       case "eth":
       case "erc20":
-        adapter = new EthereumAdapter(this.syntheticAdapter.getAllSyntheticTransactions());
+        // Live mode: NO SYNTHETIC DATA
+        adapter = new EthereumAdapter();
         break;
       case "monero":
       case "xmr":
         adapter = new MoneroAdapter();
         break;
-      case "synthetic":
       default:
         adapter = this.syntheticAdapter;
         break;
     }
 
-    this.adapters.set(normalizedChain, adapter);
+    this.adapters.set(cacheKey, adapter);
     return adapter;
   }
 

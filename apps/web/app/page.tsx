@@ -33,6 +33,7 @@ export default function Home() {
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
   const [demoCases, setDemoCases] = useState<SyntheticDemoCase[]>(SYNTHETIC_DEMO_CASES);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("graph");
 
   // Selection states
@@ -56,6 +57,7 @@ export default function Home() {
           chain: "ethereum",
           maxHops: 6,
           direction: "forward",
+          mode: "demo",
           title: "Operation Silk Trail (Narcotics Pipeline)",
           caseNumber: "CASE-SILK-001",
           investigatorName: "HIDTA Narcotics Task Force",
@@ -75,8 +77,10 @@ export default function Home() {
     chain: string;
     maxHops: number;
     direction: "forward" | "backward" | "both";
+    mode: "live" | "demo";
   }) => {
     setIsLoading(true);
+    setError(null);
     setSelectedNode(null);
     setSelectedEdge(null);
     try {
@@ -85,12 +89,14 @@ export default function Home() {
         chain: params.chain,
         maxHops: params.maxHops,
         direction: params.direction,
+        mode: params.mode,
         title: `Investigation: ${params.target.slice(0, 8)}... (${params.chain.toUpperCase()})`,
       });
       setInvestigation(inv);
       setActiveTab("graph");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err.message || "Failed to trace target address");
     } finally {
       setIsLoading(false);
     }
@@ -120,6 +126,7 @@ export default function Home() {
             demoCases={demoCases}
             onSearch={handleSearch}
             isLoading={isLoading}
+            error={error}
           />
         </div>
 

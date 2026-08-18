@@ -140,12 +140,19 @@ export async function createInvestigation(req: CreateInvestigationRequest): Prom
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(req),
     });
-    if (res.ok) {
-      const json = await res.json();
+    const json = await res.json();
+    if (res.ok && json.success) {
       return json.data;
+    } else {
+      throw new Error(json.error || "Failed to create investigation");
     }
-  } catch {}
-  return localStore.create(req);
+  } catch (err: any) {
+    if (err.message && err.message !== "Failed to fetch") {
+      throw err;
+    }
+    // Fallback to local store only if fetch completely failed (e.g., network error)
+    return localStore.create(req);
+  }
 }
 
 export async function fetchInvestigation(id: string): Promise<Investigation | null> {

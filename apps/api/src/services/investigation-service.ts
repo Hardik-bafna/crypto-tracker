@@ -41,6 +41,7 @@ export class InvestigationService {
       await this.createInvestigation({
         target: demo.suspectAddress,
         chain: demo.chain,
+        mode: "demo",
         maxHops: demo.recommendedHops,
         direction: "forward",
         title: demo.name,
@@ -56,7 +57,7 @@ export class InvestigationService {
     const detected = BlockchainAdapterFactory.detectChain(req.target);
     const chain = req.chain || (detected.chain !== "unknown" ? detected.chain : "ethereum");
     const targetType = detected.type !== "unknown" ? detected.type : "address";
-    const adapter = BlockchainAdapterFactory.getAdapter(chain);
+    const adapter = BlockchainAdapterFactory.getAdapter(chain, req.mode);
 
     const maxHops = req.maxHops || 5;
     const direction = req.direction || "forward";

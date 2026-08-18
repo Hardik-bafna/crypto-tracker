@@ -47,6 +47,7 @@ export type Investigation = z.infer<typeof InvestigationSchema>;
 export const CreateInvestigationRequestSchema = z.object({
   target: z.string().min(1, "Target address or transaction hash is required"),
   chain: z.string().default("ethereum"),
+  mode: z.enum(["live", "demo"]).default("live"),
   direction: z.enum(["forward", "backward", "both"]).default("forward"),
   maxHops: z.number().min(1).max(20).default(6),
   title: z.string().optional(),

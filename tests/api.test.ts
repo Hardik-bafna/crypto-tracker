@@ -38,6 +38,7 @@ describe("Fastify Investigation API Integration", () => {
         chain: "ethereum",
         maxHops: 6,
         direction: "forward",
+        mode: "demo",
         title: "Test Narcotics Investigation",
       }),
     });
@@ -57,6 +58,7 @@ describe("Fastify Investigation API Integration", () => {
       body: JSON.stringify({
         target: "0x98174f85e49f87f4c9c1b3f9429188d3f6a2b001",
         chain: "ethereum",
+        mode: "demo",
         maxHops: 6,
       }),
     });
