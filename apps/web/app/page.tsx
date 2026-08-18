@@ -25,6 +25,7 @@ import {
   Clock,
   Layers,
   Sparkles,
+  Search,
 } from "lucide-react";
 
 type TabType = "graph" | "risk" | "evidence" | "timeline" | "clusters";
@@ -81,6 +82,7 @@ export default function Home() {
   }) => {
     setIsLoading(true);
     setError(null);
+    setInvestigation(null); // Clear old investigation
     setSelectedNode(null);
     setSelectedEdge(null);
     try {
@@ -191,6 +193,20 @@ export default function Home() {
               <div className="flex flex-col items-center gap-3">
                 <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
                 <span>Initializing forensic transaction graph...</span>
+              </div>
+            </div>
+          )}
+
+          {!isLoading && !investigation && (
+            <div className="flex-1 flex items-center justify-center text-gray-500 text-sm p-6 text-center">
+              <div className="flex flex-col items-center gap-4 max-w-sm">
+                <div className="w-16 h-16 rounded-full bg-gray-800/50 flex items-center justify-center mb-2">
+                  <Search className="w-8 h-8 text-gray-600" />
+                </div>
+                <p>No active investigation.</p>
+                <p className="text-xs text-gray-600">
+                  Enter a valid wallet address or select a demo scenario above to begin forensic tracing.
+                </p>
               </div>
             </div>
           )}

@@ -436,11 +436,16 @@ export class SyntheticBlockchainAdapter extends BaseBlockchainAdapter {
   }
 
   validateAddress(address: string): boolean {
-    return !!address && address.length >= 26;
+    // ETH-style address (0x + 40 hex) OR arbitrary synthetic address >= 26 chars but NOT a tx hash
+    if (/^0x[a-fA-F0-9]{40}$/.test(address?.trim?.())) return true;
+    return !!address && address.length >= 26 && address.length < 64;
   }
 
   validateTxHash(txHash: string): boolean {
-    return !!txHash && txHash.length >= 32;
+    // ETH-style tx hash (0x + 64 hex) OR bare 64-char hex
+    if (/^0x[a-fA-F0-9]{64}$/.test(txHash?.trim?.())) return true;
+    if (/^[a-fA-F0-9]{64}$/.test(txHash?.trim?.())) return true;
+    return false;
   }
 
   async getTransaction(txHash: string): Promise<NormalizedTransaction | null> {

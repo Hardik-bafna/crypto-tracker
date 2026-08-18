@@ -174,14 +174,46 @@ export class GraphBuilder {
   ): Promise<TransactionGraph> {
     const graph = new TransactionGraph();
     const visited = new Set<string>();
-    let currentQueue: string[] = [startAddress.toLowerCase()];
+    let currentQueue: string[] = [];
+
+    // Check if the input is a TxHash instead of an Address
+    // Addresses always take priority - only route as tx hash if it is NOT a valid address
+    const isAddress = adapter.validateAddress ? adapter.validateAddress(startAddress) : false;
+    const isTxHash = !isAddress && adapter.validateTxHash ? adapter.validateTxHash(startAddress) : false;
+
+    if (isTxHash) {
+      if (adapter.getTransaction) {
+        const tx = await adapter.getTransaction(startAddress);
+        if (tx) {
+          const subGraph = GraphBuilder.buildFromTransactions([tx], startAddress);
+          for (const node of subGraph.getAllNodes()) {
+            graph.addNode(node);
+          }
+          for (const edge of subGraph.getAllEdges()) {
+            graph.addEdge(edge);
+          }
+          // Seed the queue with the addresses involved in the transaction (preserve original case)
+          if (direction === "forward" || direction === "both") {
+            tx.to.forEach(addr => currentQueue.push(addr));
+            if (tx.tokenTransfers) tx.tokenTransfers.forEach(tt => currentQueue.push(tt.to));
+          }
+          if (direction === "backward" || direction === "both") {
+            tx.from.forEach(addr => currentQueue.push(addr));
+            if (tx.tokenTransfers) tx.tokenTransfers.forEach(tt => currentQueue.push(tt.from));
+          }
+        }
+      }
+    } else {
+      currentQueue.push(startAddress); // preserve original case for API calls
+    }
 
     for (let hop = 0; hop < maxHops; hop++) {
       const nextQueue: string[] = [];
 
       for (const addr of currentQueue) {
-        if (visited.has(addr)) continue;
-        visited.add(addr);
+        const addrLower = addr.toLowerCase();
+        if (visited.has(addrLower)) continue;
+        visited.add(addrLower);
 
         const txs = await adapter.getAddressTransactions(addr, {
           direction: direction === "both" ? "all" : direction === "forward" ? "outbound" : "inbound",
@@ -192,7 +224,7 @@ export class GraphBuilder {
         for (const node of subGraph.getAllNodes()) {
           graph.addNode(node);
           if (!visited.has(node.address.toLowerCase())) {
-            nextQueue.push(node.address.toLowerCase());
+            nextQueue.push(node.address); // preserve original case for API calls
           }
         }
         for (const edge of subGraph.getAllEdges()) {

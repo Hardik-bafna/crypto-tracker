@@ -58,7 +58,59 @@ export class BitcoinAdapter extends BaseBlockchainAdapter {
   }
 
   async getTransaction(txHash: string): Promise<NormalizedTransaction | null> {
-    const tx = this.txStore.get(txHash.toLowerCase());
+    const lower = txHash.toLowerCase();
+    let tx = this.txStore.get(lower);
+    
+    if (!tx && this.validateTxHash(txHash)) {
+      try {
+        const res = await fetch(`https://blockstream.info/api/tx/${txHash}`, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (compatible; CryptoTracer/1.0)",
+            "Accept": "application/json",
+          },
+        });
+        if (res.ok) {
+          const data: any = await res.json();
+          if (data && data.txid) {
+            const inputs: UTXOInput[] = (data.vin || []).map((vin: any) => ({
+              txHash: vin.txid,
+              outputIndex: vin.vout,
+              address: vin.prevout?.scriptpubkey_address || "unknown",
+              amount: (vin.prevout?.value || 0).toString(),
+            }));
+            const outputs: UTXOOutput[] = (data.vout || []).map((vout: any, idx: number) => ({
+              index: idx,
+              address: vout.scriptpubkey_address || "unknown",
+              amount: (vout.value || 0).toString(),
+            }));
+            const from = Array.from(new Set(inputs.map((i) => i.address)));
+            const to = Array.from(new Set(outputs.map((o) => o.address)));
+            const totalOut = outputs.reduce((acc, o) => acc + BigInt(o.amount || "0"), 0n);
+            
+            tx = {
+              id: `btc-${data.txid}`,
+              chain: "bitcoin",
+              txHash: data.txid,
+              blockNumber: data.status?.block_height,
+              timestamp: new Date((data.status?.block_time || Date.now() / 1000) * 1000),
+              from,
+              to,
+              asset: "BTC",
+              amount: totalOut.toString(),
+              formattedAmount: `${(Number(totalOut) / 1e8).toFixed(8)} BTC`,
+              fee: data.fee ? `${(data.fee / 1e8).toFixed(8)} BTC` : undefined,
+              status: "confirmed",
+              inputs,
+              outputs,
+              isContractCall: false,
+              metadata: { source: "bitcoin_mainnet_live" },
+            };
+            this.seedData([tx]);
+          }
+        }
+      } catch {}
+    }
+
     return tx || null;
   }
 
@@ -72,9 +124,17 @@ export class BitcoinAdapter extends BaseBlockchainAdapter {
     // Attempt live Bitcoin Mainnet query via Blockstream API if not in local store
     if (hashes.length === 0 && this.validateAddress(address)) {
       try {
-        const res = await fetch(`https://blockstream.info/api/address/${address}/txs`);
+        console.log(`[BitcoinAdapter] Fetching txs for ${address} from Blockstream...`);
+        const res = await fetch(`https://blockstream.info/api/address/${address}/txs`, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (compatible; CryptoTracer/1.0)",
+            "Accept": "application/json",
+          },
+        });
+        console.log(`[BitcoinAdapter] Blockstream status: ${res.status}`);
         if (res.ok) {
           const data: any[] = await res.json();
+          console.log(`[BitcoinAdapter] Got ${data?.length} txs from Blockstream`);
           if (Array.isArray(data) && data.length > 0) {
             const liveTxs: NormalizedTransaction[] = data.slice(0, 20).map((tx: any) => {
               const inputs: UTXOInput[] = (tx.vin || []).map((vin: any) => ({
@@ -111,14 +171,17 @@ export class BitcoinAdapter extends BaseBlockchainAdapter {
               };
             });
             this.seedData(liveTxs);
+            console.log(`[BitcoinAdapter] Seeded ${liveTxs.length} txs into store`);
           }
         }
-      } catch {}
-
-      // We no longer automatically synthesize data for unknown real addresses
-      // to avoid confusing users with hallucinated transactions.
+      } catch (e: any) {
+        console.error(`[BitcoinAdapter] Fetch failed: ${e?.message}`);
+      }
     }
 
+    // Re-read hashes after potential live fetch
+    hashes = this.addressTxMap.get(lower) || [];
+    console.log(`[BitcoinAdapter] hashes after fetch: ${hashes.length} for ${lower}`);
     let transactions = hashes
       .map((h) => this.txStore.get(h))
       .filter((tx): tx is NormalizedTransaction => !!tx);

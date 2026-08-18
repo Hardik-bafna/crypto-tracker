@@ -59,11 +59,29 @@ export class InvestigationService {
     const targetType = detected.type !== "unknown" ? detected.type : "address";
     const adapter = BlockchainAdapterFactory.getAdapter(chain, req.mode);
 
+    // Validate formatting before querying
+    const isValidAddress = adapter.validateAddress ? adapter.validateAddress(req.target) : false;
+    const isValidTx = adapter.validateTxHash ? adapter.validateTxHash(req.target) : false;
+    
+    // In synthetic mode, we bypass strict formatting checks since mock addresses might be arbitrary
+    if (req.mode !== "demo" && chain !== "synthetic" && !isValidAddress && !isValidTx) {
+      throw new Error(`Invalid format for ${chain.toUpperCase()}. Please enter a proper wallet address or transaction hash.`);
+    }
+
     const maxHops = req.maxHops || 5;
     const direction = req.direction || "forward";
 
     // 1. Ingest transactions & construct Graph
     const graph = await GraphBuilder.ingestAndBuild(adapter, req.target, maxHops, direction);
+
+    console.log(`[Investigation] target=${req.target} chain=${chain} mode=${req.mode} isAddress=${isValidAddress} isTxHash=${isValidTx} edgeCount=${graph.getEdgeCount()} nodeCount=${graph.getNodeCount()}`);
+
+    if (graph.getEdgeCount() === 0) {
+      if (isValidTx) {
+        throw new Error(`No transaction data found for tx hash ${req.target} on ${chain.toUpperCase()}. The transaction may not yet be indexed, or the network call to the block explorer may have failed.`);
+      }
+      throw new Error(`No transactions found for address ${req.target} on ${chain.toUpperCase()}. This wallet may have no transaction history.`);
+    }
 
     // Label graph nodes with Entity Intelligence
     for (const node of graph.getAllNodes()) {

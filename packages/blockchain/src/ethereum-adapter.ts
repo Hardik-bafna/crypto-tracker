@@ -53,7 +53,68 @@ export class EthereumAdapter extends BaseBlockchainAdapter {
   }
 
   async getTransaction(txHash: string): Promise<NormalizedTransaction | null> {
-    return this.txStore.get(txHash.toLowerCase()) || null;
+    const lower = txHash.toLowerCase();
+    let tx = this.txStore.get(lower);
+    
+    if (!tx && this.validateTxHash(txHash)) {
+      try {
+        console.log(`[EthereumAdapter] Fetching tx from Blockscout: ${txHash}`);
+        const res = await fetch(`https://eth.blockscout.com/api/v2/transactions/${txHash}`);
+        console.log(`[EthereumAdapter] Blockscout response status: ${res.status}`);
+        if (res.ok) {
+          const data: any = await res.json();
+          console.log(`[EthereumAdapter] tx hash from response: ${data?.hash}, from: ${data?.from?.hash}, to: ${data?.to?.hash}`);
+          if (data && data.hash) {
+            const wei = data.value || "0";
+            let ethVal = "0.0000";
+            try {
+              ethVal = (Number(BigInt(wei) / 10000000000n) / 1e8).toFixed(4);
+            } catch {}
+            
+            const tokenTransfers: TokenTransfer[] = (data.token_transfers || []).map((tt: any) => {
+              const tokenSymbol = tt.token?.symbol || "ERC20";
+              const tokenDecimals = tt.token?.decimals ? parseInt(tt.token.decimals) : 18;
+              let formattedAmount = "0";
+              try {
+                const val = tt.total?.value || "0";
+                formattedAmount = (Number(BigInt(val)) / Math.pow(10, tokenDecimals)).toFixed(4);
+              } catch {}
+              
+              return {
+                tokenAddress: tt.token?.address || "0x0",
+                symbol: tokenSymbol,
+                amount: tt.total?.value || "0",
+                formattedAmount,
+                from: tt.from?.hash || data.from?.hash,
+                to: tt.to?.hash || data.to?.hash || "0x0000000000000000000000000000000000000000",
+              };
+            });
+
+            tx = {
+              id: `eth-${data.hash}`,
+              chain: "ethereum",
+              txHash: data.hash,
+              blockNumber: data.block_number,
+              timestamp: new Date(data.timestamp || Date.now()),
+              from: [data.from?.hash],
+              to: [data.to?.hash || "0x0000000000000000000000000000000000000000"],
+              asset: "ETH",
+              amount: wei,
+              formattedAmount: `${ethVal} ETH`,
+              status: "confirmed",
+              isContractCall: !!data.to?.is_contract,
+              tokenTransfers: tokenTransfers.length > 0 ? tokenTransfers : undefined,
+              metadata: { source: "mainnet_live" },
+            };
+            this.seedData([tx]);
+          }
+        }
+      } catch (e: any) {
+        console.error(`[EthereumAdapter] getTransaction failed: ${e?.message}`);
+      }
+    }
+    
+    return tx || null;
   }
 
   async getAddressTransactions(
@@ -117,11 +178,10 @@ export class EthereumAdapter extends BaseBlockchainAdapter {
           }
         }
       } catch {}
-
-      // We no longer automatically synthesize data for unknown real addresses
-      // to avoid confusing users with hallucinated transactions.
     }
 
+    // Re-read hashes after potential live fetch
+    hashes = this.addressTxMap.get(lower) || [];
     let transactions = hashes
       .map((h) => this.txStore.get(h))
       .filter((tx): tx is NormalizedTransaction => !!tx);

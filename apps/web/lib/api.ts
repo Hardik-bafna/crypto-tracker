@@ -25,13 +25,25 @@ class LocalInvestigationStore {
     const detected = BlockchainAdapterFactory.detectChain(req.target);
     const chain = req.chain || (detected.chain !== "unknown" ? detected.chain : "ethereum");
     const targetType = detected.type !== "unknown" ? detected.type : "address";
-    const adapter = BlockchainAdapterFactory.getAdapter(chain);
+    const adapter = BlockchainAdapterFactory.getAdapter(chain, req.mode as "live" | "demo");
+
+    // Validate formatting before querying
+    const isValidAddress = adapter.validateAddress ? adapter.validateAddress(req.target) : false;
+    const isValidTx = adapter.validateTxHash ? adapter.validateTxHash(req.target) : false;
+    
+    if (req.mode !== "demo" && chain !== "synthetic" && !isValidAddress && !isValidTx) {
+      throw new Error(`Invalid format for ${chain.toUpperCase()}. Please enter a proper wallet address or transaction hash.`);
+    }
 
     const maxHops = req.maxHops || 5;
     const direction = req.direction || "forward";
 
     // Build Graph
     const graph = await GraphBuilder.ingestAndBuild(adapter, req.target, maxHops, direction);
+
+    if (graph.getEdgeCount() === 0) {
+      throw new Error(`Invalid address or no transactions found on ${chain.toUpperCase()} for ${req.target}`);
+    }
 
     // Entity Labels
     for (const node of graph.getAllNodes()) {
@@ -147,10 +159,12 @@ export async function createInvestigation(req: CreateInvestigationRequest): Prom
       throw new Error(json.error || "Failed to create investigation");
     }
   } catch (err: any) {
-    if (err.message && err.message !== "Failed to fetch") {
+    // If it's our own thrown error from a 400/500 response, re-throw it.
+    // Otherwise, if it's a TypeError (Network Error from fetch failing), fall back to localStore.
+    if (err.message && err.message !== "Failed to fetch" && !err.message.includes("NetworkError") && err.name !== "TypeError") {
       throw err;
     }
-    // Fallback to local store only if fetch completely failed (e.g., network error)
+    // Fallback to local store
     return localStore.create(req);
   }
 }

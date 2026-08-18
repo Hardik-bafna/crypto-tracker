@@ -42,8 +42,12 @@ export function createInvestigationRoutes(service: InvestigationService): Fastif
         });
       }
 
-      const investigation = await service.createInvestigation(parseResult.data);
-      return reply.status(201).send({ success: true, data: investigation });
+      try {
+        const investigation = await service.createInvestigation(parseResult.data);
+        return reply.status(201).send({ success: true, data: investigation });
+      } catch (err: any) {
+        return reply.status(400).send({ success: false, error: err.message || "Failed to create investigation" });
+      }
     });
 
     // Get investigation by ID
