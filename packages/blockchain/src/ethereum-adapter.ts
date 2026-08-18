@@ -76,6 +76,26 @@ export class EthereumAdapter extends BaseBlockchainAdapter {
               try {
                 ethVal = (Number(BigInt(wei) / 10000000000n) / 1e8).toFixed(4);
               } catch {}
+              
+              const tokenTransfers: TokenTransfer[] = (tx.token_transfers || []).map((tt: any) => {
+                const tokenSymbol = tt.token?.symbol || "ERC20";
+                const tokenDecimals = tt.token?.decimals ? parseInt(tt.token.decimals) : 18;
+                let formattedAmount = "0";
+                try {
+                  const val = tt.total?.value || "0";
+                  formattedAmount = (Number(BigInt(val)) / Math.pow(10, tokenDecimals)).toFixed(4);
+                } catch {}
+                
+                return {
+                  tokenAddress: tt.token?.address || "0x0",
+                  symbol: tokenSymbol,
+                  amount: tt.total?.value || "0",
+                  formattedAmount,
+                  from: tt.from?.hash || address,
+                  to: tt.to?.hash || "0x0000000000000000000000000000000000000000",
+                };
+              });
+
               return {
                 id: `eth-${tx.hash}`,
                 chain: "ethereum",
@@ -89,6 +109,7 @@ export class EthereumAdapter extends BaseBlockchainAdapter {
                 formattedAmount: `${ethVal} ETH`,
                 status: "confirmed",
                 isContractCall: !!tx.to?.is_contract,
+                tokenTransfers: tokenTransfers.length > 0 ? tokenTransfers : undefined,
                 metadata: { source: "mainnet_live" },
               };
             });
