@@ -115,12 +115,8 @@ export class BitcoinAdapter extends BaseBlockchainAdapter {
         }
       } catch {}
 
-      // If still empty after live attempt, synthesize realistic multi-hop forensic path
-      hashes = this.addressTxMap.get(lower) || [];
-      if (hashes.length === 0) {
-        this.synthesizeDynamicBtcTxs(address);
-        hashes = this.addressTxMap.get(lower) || [];
-      }
+      // We no longer automatically synthesize data for unknown real addresses
+      // to avoid confusing users with hallucinated transactions.
     }
 
     let transactions = hashes
