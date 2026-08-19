@@ -4,6 +4,7 @@ import { RiskAssessmentSchema } from "./risk";
 import { EvidenceSchema, PatternDetectionResultSchema } from "./analysis";
 import { EntitySchema, AttributionItemSchema } from "./entities";
 import { WalletClusterSchema } from "./clustering";
+import { TimelineEventSchema } from "./timeline";
 
 export const InvestigationStatusEnum = z.enum(["queued", "processing", "completed", "failed"]);
 export type InvestigationStatus = z.infer<typeof InvestigationStatusEnum>;
@@ -41,6 +42,7 @@ export const InvestigationSchema = z.object({
   clusters: z.array(WalletClusterSchema).optional(),
   evidence: z.array(EvidenceSchema).optional(),
   attributions: z.array(AttributionItemSchema).optional(),
+  timeline: z.array(TimelineEventSchema).optional(),
 });
 export type Investigation = z.infer<typeof InvestigationSchema>;
 

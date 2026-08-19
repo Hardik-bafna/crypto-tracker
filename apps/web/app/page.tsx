@@ -140,7 +140,7 @@ export default function Home() {
               { id: "graph" as TabType, label: "Graph Visualizer", icon: GitFork },
               { id: "risk" as TabType, label: "Risk & Factors", icon: Activity },
               { id: "evidence" as TabType, label: "Evidence Ledger", icon: ShieldAlert, count: investigation?.evidence?.length },
-              { id: "timeline" as TabType, label: "Transaction Timeline", icon: Clock, count: investigation?.graph?.edges.length },
+              { id: "timeline" as TabType, label: "Investigation Timeline", icon: Clock, count: investigation?.timeline?.length },
               { id: "clusters" as TabType, label: "Wallet Clusters", icon: Layers, count: investigation?.clusters?.length },
             ].map((tab) => {
               const Icon = tab.icon;
@@ -249,9 +249,29 @@ export default function Home() {
             </div>
           )}
 
-          {activeTab === "timeline" && investigation?.graph?.edges && (
+          {activeTab === "timeline" && investigation?.timeline && (
             <div className="flex-1 p-6 overflow-y-auto max-w-4xl mx-auto w-full">
-              <TimelinePanel edges={investigation.graph.edges} />
+              <TimelinePanel
+                events={investigation.timeline}
+                onSelectNode={(nodeId) => {
+                  const node = investigation.graph?.nodes.find(
+                    (n) => n.address.toLowerCase() === nodeId.toLowerCase()
+                  );
+                  if (node) {
+                    setSelectedNode(node);
+                    setSelectedEdge(null);
+                    setActiveTab("graph");
+                  }
+                }}
+                onSelectEdge={(edgeId) => {
+                  const edge = investigation.graph?.edges.find((e) => e.id === edgeId);
+                  if (edge) {
+                    setSelectedEdge(edge);
+                    setSelectedNode(null);
+                    setActiveTab("graph");
+                  }
+                }}
+              />
             </div>
           )}
 

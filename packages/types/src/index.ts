@@ -6,3 +6,6 @@ export * from "./clustering";
 export * from "./risk";
 export * from "./investigation";
 export * from "./ai";
+export * from "./timeline";
+export * from "./trace";
+

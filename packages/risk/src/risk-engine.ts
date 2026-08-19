@@ -3,6 +3,7 @@ import {
   RiskFactor,
   RiskLevel,
   RiskEngineConfig,
+  ConfidenceAssessment,
   PatternDetectionResult,
   Evidence,
   GraphNode,
@@ -208,6 +209,9 @@ export class RiskEngine {
       recommendations.push("Continue standard transaction monitoring and periodic address re-evaluations.");
     }
 
+    // Compute confidence assessment
+    const confidence = this.evaluateConfidence(params);
+
     return {
       target,
       targetType,
@@ -218,6 +222,151 @@ export class RiskEngine {
       summary,
       calculatedAt: new Date(),
       recommendations,
+      confidence,
+    };
+  }
+
+  /**
+   * Evaluates the confidence (reliability) of the investigation based on
+   * evidence quality, entity coverage, and data completeness.
+   * This is independent from the risk score — risk measures severity of
+   * indicators while confidence measures how much we can trust the results.
+   */
+  private evaluateConfidence(params: {
+    patterns: PatternDetectionResult[];
+    evidence: Evidence[];
+    nodes?: GraphNode[];
+    clusters?: WalletCluster[];
+  }): ConfidenceAssessment {
+    const strengths: string[] = [];
+    const limitations: string[] = [];
+    let confidencePoints = 0;
+    const maxPoints = 100;
+
+    const nodes = params.nodes || [];
+    const totalNodes = nodes.length;
+
+    // --- 1. Entity attribution coverage (0-25 pts) ---
+    const identifiedNodes = nodes.filter((n) => !!n.entityType).length;
+    const attributionRatio = totalNodes > 0 ? identifiedNodes / totalNodes : 0;
+
+    if (attributionRatio >= 0.4) {
+      confidencePoints += 25;
+      strengths.push("Multiple wallets identified as known entities");
+    } else if (attributionRatio >= 0.2) {
+      confidencePoints += 15;
+      strengths.push("Some wallets linked to known entities");
+      limitations.push("Many wallet owners remain unidentified");
+    } else if (identifiedNodes > 0) {
+      confidencePoints += 8;
+      limitations.push("Most wallet owners remain unidentified");
+    } else {
+      limitations.push("No wallet owners could be identified");
+    }
+
+    // --- 2. Pattern detection confidence (0-25 pts) ---
+    if (params.patterns.length > 0) {
+      const avgPatternConfidence =
+        params.patterns.reduce((sum, p) => sum + p.confidence, 0) / params.patterns.length;
+
+      if (avgPatternConfidence >= 0.85) {
+        confidencePoints += 25;
+        strengths.push("Detected patterns have high certainty");
+      } else if (avgPatternConfidence >= 0.6) {
+        confidencePoints += 15;
+        strengths.push("Detected patterns have moderate certainty");
+      } else {
+        confidencePoints += 8;
+        limitations.push("Detected patterns have lower certainty");
+      }
+    } else {
+      confidencePoints += 5;
+      limitations.push("No suspicious patterns were detected to evaluate");
+    }
+
+    // --- 3. Evidence density (0-20 pts) ---
+    const evidenceCount = params.evidence.length;
+    if (evidenceCount >= 5) {
+      confidencePoints += 20;
+      strengths.push(`${evidenceCount} pieces of supporting evidence collected`);
+    } else if (evidenceCount >= 2) {
+      confidencePoints += 12;
+      strengths.push(`${evidenceCount} pieces of supporting evidence found`);
+    } else if (evidenceCount >= 1) {
+      confidencePoints += 6;
+      limitations.push("Limited supporting evidence available");
+    } else {
+      limitations.push("No supporting evidence was collected");
+    }
+
+    // --- 4. Cross-chain completeness (0-15 pts) ---
+    const bridgePatterns = params.patterns.filter((p) => p.patternType === "BRIDGE_INTERACTION");
+    const hasCrossChainEdges = nodes.some((n) => n.tags?.includes("BRIDGE"));
+
+    if (bridgePatterns.length === 0 && !hasCrossChainEdges) {
+      // No cross-chain activity, so no gap
+      confidencePoints += 15;
+      strengths.push("All activity observed on a single blockchain");
+    } else if (bridgePatterns.length > 0) {
+      confidencePoints += 8;
+      limitations.push("Funds moved across blockchains — destination chain may not be fully traced");
+    } else {
+      confidencePoints += 5;
+      limitations.push("Bridge interactions detected but cross-chain tracing is incomplete");
+    }
+
+    // --- 5. Cluster coverage (0-15 pts) ---
+    const clusters = params.clusters || [];
+    const clusteredAddresses = new Set(clusters.flatMap((c) => c.addresses));
+    const clusterRatio = totalNodes > 0 ? clusteredAddresses.size / totalNodes : 0;
+
+    if (clusterRatio >= 0.3) {
+      confidencePoints += 15;
+      strengths.push("Wallet clustering identified related addresses");
+    } else if (clusters.length > 0) {
+      confidencePoints += 8;
+      strengths.push("Some wallet clusters were identified");
+      limitations.push("Many addresses could not be grouped into clusters");
+    } else {
+      confidencePoints += 3;
+      limitations.push("Wallet ownership grouping could not be determined");
+    }
+
+    // --- Check for exchange endpoints ---
+    const exchangeNodes = nodes.filter((n) => n.entityType === "EXCHANGE");
+    if (exchangeNodes.length > 0) {
+      strengths.push(
+        `Cash-out endpoint identified at ${exchangeNodes.map((n) => n.entityName || "an exchange").join(", ")}`
+      );
+    } else {
+      limitations.push("No cash-out exchange endpoint was identified");
+    }
+
+    // --- Check for mixer confirmation ---
+    const mixerPatterns = params.patterns.filter((p) => p.patternType === "MIXER_INTERACTION");
+    if (mixerPatterns.length > 0) {
+      strengths.push("Mixer/privacy pool interaction confirmed");
+    }
+
+    // Normalize
+    const confidenceScore = Math.min(100, Math.max(0, Math.round(confidencePoints)));
+
+    let confidenceLevel: "LOW" | "MEDIUM" | "HIGH" | "VERIFIED";
+    if (confidenceScore >= 80) {
+      confidenceLevel = "VERIFIED";
+    } else if (confidenceScore >= 60) {
+      confidenceLevel = "HIGH";
+    } else if (confidenceScore >= 35) {
+      confidenceLevel = "MEDIUM";
+    } else {
+      confidenceLevel = "LOW";
+    }
+
+    return {
+      confidenceScore,
+      confidenceLevel,
+      strengths,
+      limitations,
     };
   }
 }
