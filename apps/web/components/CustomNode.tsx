@@ -26,6 +26,9 @@ export interface CustomNodeData {
   isSuspect?: boolean;
   hopLevel?: number;
   tags?: string[];
+  isDimmed?: boolean;
+  isPathHighlighted?: boolean;
+  isNeighborHighlighted?: boolean;
   [key: string]: unknown;
 }
 
@@ -34,16 +37,26 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
   const isTarget = nodeData.isTarget;
   const entityType = nodeData.entityType;
   const entityName = nodeData.entityName;
+  const isDimmed = nodeData.isDimmed;
+  const isPath = nodeData.isPathHighlighted;
+  const isNeighbor = nodeData.isNeighborHighlighted;
 
-  // Determine badge styling and icon based on entity type
-  let badgeColor = "bg-gray-800 text-gray-300 border-gray-700";
+  // Human readable label for entity types
+  let entityLabel = "Unknown Wallet";
+  let badgeColor = "bg-gray-800/90 text-gray-300 border-gray-700";
   let EntityIcon = Wallet;
 
-  if (entityType === "MIXER") {
-    badgeColor = "bg-rose-950/80 text-rose-300 border-rose-600";
+  if (entityType === "EXCHANGE") {
+    entityLabel = "Known Exchange";
+    badgeColor = "bg-emerald-950/90 text-emerald-300 border-emerald-600";
+    EntityIcon = Landmark;
+  } else if (entityType === "MIXER") {
+    entityLabel = "Known Mixer";
+    badgeColor = "bg-rose-950/90 text-rose-300 border-rose-600";
     EntityIcon = Shuffle;
   } else if (entityType === "BRIDGE") {
-    badgeColor = "bg-cyan-950/80 text-cyan-300 border-cyan-500";
+    entityLabel = "Known Bridge";
+    badgeColor = "bg-cyan-950/90 text-cyan-300 border-cyan-500";
     EntityIcon = ArrowDownRight;
   } else if (entityType === "EXCHANGE") {
     badgeColor = "bg-emerald-950/80 text-emerald-300 border-emerald-500";
@@ -52,10 +65,12 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
     badgeColor = "bg-purple-950/80 text-purple-300 border-purple-500";
     EntityIcon = Coins;
   } else if (entityType === "KNOWN_ILLICIT" || entityType === "SCAM") {
+    entityLabel = "Flagged Target";
     badgeColor = "bg-red-950 text-red-300 border-red-600 animate-pulse";
     EntityIcon = AlertTriangle;
   } else if (isTarget) {
-    badgeColor = "bg-amber-950/80 text-amber-300 border-amber-500";
+    entityLabel = "Target Seed";
+    badgeColor = "bg-amber-950/90 text-amber-300 border-amber-500";
     EntityIcon = ShieldAlert;
   }
 
@@ -76,7 +91,7 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
 
   return (
     <div
-      className={`relative min-w-[200px] max-w-[260px] rounded-xl bg-gray-900/95 backdrop-blur-md p-3.5 shadow-2xl border transition-all duration-200 cursor-pointer ${borderClass}`}
+      className={`relative min-w-[200px] max-w-[260px] rounded-xl bg-gray-900/95 backdrop-blur-md p-3.5 shadow-2xl border ${borderClass} ${opacityClass} cursor-pointer`}
     >
       <Handle
         type="target"
@@ -84,12 +99,12 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
         className="!w-3 !h-3 !bg-gray-400 !border-2 !border-gray-900 hover:!bg-brand-400"
       />
 
-      {/* Header with Type & Chain */}
-      <div className="flex items-center justify-between gap-2 mb-2">
+      {/* Header with Entity Name & Hop */}
+      <div className="flex items-center justify-between gap-2 mb-1.5">
         <div className="flex items-center gap-1.5 overflow-hidden">
-          <EntityIcon className="w-3.5 h-3.5 shrink-0" />
-          <span className="text-[11px] font-semibold truncate tracking-wide uppercase">
-            {entityName || (isTarget ? "TARGET WALLET" : nodeData.chain)}
+          <EntityIcon className="w-3.5 h-3.5 shrink-0 text-gray-300" />
+          <span className="text-xs font-bold truncate text-white tracking-wide">
+            {displayName}
           </span>
         </div>
         {nodeData.hopLevel !== undefined && (
@@ -99,21 +114,20 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
         )}
       </div>
 
-      {/* Address */}
-      <div className="font-mono text-xs text-gray-200 font-medium mb-2 break-all bg-black/40 px-2 py-1 rounded border border-gray-800/80">
-        {nodeData.label || `${nodeData.address.slice(0, 6)}...${nodeData.address.slice(-4)}`}
+      {/* Entity Category Badge */}
+      <div className="mb-2">
+        <span
+          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColor}`}
+        >
+          {entityLabel}
+        </span>
       </div>
 
-      {/* Badges / Entity Pill */}
-      {entityType && (
-        <div className="mb-2">
-          <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColor}`}
-          >
-            {entityType}
-          </span>
-        </div>
-      )}
+      {/* Address */}
+      <div className="font-mono text-[11px] text-gray-300 font-medium mb-2 break-all bg-black/50 px-2 py-1 rounded border border-gray-800/80 flex items-center justify-between">
+        <span title={nodeData.address}>{formattedAddress}</span>
+      </div>
+
 
       {/* Footer Info */}
       <div className="flex items-center justify-between text-[10px] text-gray-400 pt-1.5 border-t border-gray-800/60">

@@ -15,6 +15,17 @@ export const RiskFactorSchema = z.object({
 });
 export type RiskFactor = z.infer<typeof RiskFactorSchema>;
 
+export const ConfidenceLevelEnum = z.enum(["LOW", "MEDIUM", "HIGH", "VERIFIED"]);
+export type ConfidenceLevel = z.infer<typeof ConfidenceLevelEnum>;
+
+export const ConfidenceAssessmentSchema = z.object({
+  confidenceScore: z.number().min(0).max(100),
+  confidenceLevel: ConfidenceLevelEnum,
+  strengths: z.array(z.string()),
+  limitations: z.array(z.string()),
+});
+export type ConfidenceAssessment = z.infer<typeof ConfidenceAssessmentSchema>;
+
 export const RiskAssessmentSchema = z.object({
   target: z.string(),
   targetType: z.enum(["address", "transaction", "txHash", "cluster", "investigation"]),
@@ -25,6 +36,7 @@ export const RiskAssessmentSchema = z.object({
   summary: z.string(),
   calculatedAt: z.coerce.date(),
   recommendations: z.array(z.string()),
+  confidence: ConfidenceAssessmentSchema.optional(),
 });
 export type RiskAssessment = z.infer<typeof RiskAssessmentSchema>;
 

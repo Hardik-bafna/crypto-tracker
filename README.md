@@ -93,7 +93,7 @@ CryptoTrace™ is built as a modular monorepo containing application layers and 
 ### Monorepo Architectural Layering
 
 ```
-narabsdk/
+crypto-tracker/
 ├── apps/
 │   ├── web/                    # Next.js 14 Web Visualizer (React Flow, Tailwind CSS, Lucide Icons)
 │   └── api/                    # Fastify 4 REST API Server (OpenAPI/Swagger, Controllers)

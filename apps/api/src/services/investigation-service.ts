@@ -16,6 +16,7 @@ import { PatternEngine } from "@crypto-tracer/analysis";
 import { ClusterEngine } from "@crypto-tracer/clustering";
 import { RiskEngine } from "@crypto-tracer/risk";
 import { ReportGenerator } from "@crypto-tracer/ai";
+import { generateTimeline } from "./timeline-generator";
 
 export class InvestigationService {
   private investigations: Map<string, Investigation> = new Map();
@@ -155,6 +156,7 @@ export class InvestigationService {
       clusters,
       evidence,
       attributions,
+      timeline: generateTimeline(graph.toJSON(), patterns),
     };
 
     this.investigations.set(id, investigation);

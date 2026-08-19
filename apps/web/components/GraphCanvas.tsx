@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useCallback, useEffect } from "react";
+import React, { useMemo, useCallback, useEffect, useState } from "react";
 import {
   ReactFlow,
   Controls,
@@ -15,9 +15,30 @@ import {
   BackgroundVariant,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { GraphData, GraphNode, GraphEdge } from "@crypto-tracer/types";
+import {
+  GraphData,
+  GraphNode,
+  GraphEdge,
+  TracePathDetail,
+  TracePathOptions,
+} from "@crypto-tracer/types";
+import { TransactionGraph, findMultipleTracePaths } from "@crypto-tracer/graph";
 import { CustomNode } from "./CustomNode";
 import { CustomEdge } from "./CustomEdge";
+import {
+  Compass,
+  ArrowRight,
+  Filter,
+  Play,
+  RotateCcw,
+  Check,
+  ChevronRight,
+  Shield,
+  Layers,
+  Sparkles,
+  Link2,
+  DollarSign,
+} from "lucide-react";
 
 interface Props {
   graphData: GraphData;
@@ -106,8 +127,22 @@ export const GraphCanvas: React.FC<Props> = ({
       const startY = -((totalInHop - 1) * Y_SPACING) / 2;
 
       nodesInHop.forEach((node, idx) => {
+        const addrLower = node.address.toLowerCase();
+
+        const isPathHighlighted = activePathNodeIds.has(addrLower);
+        const isNeighborHighlighted = neighborNodeIds.has(addrLower);
+        const isSelected = addrLower === selectedNodeId?.toLowerCase();
+
+        // Dim if trace mode is active and not on path, OR if node selected and not in neighborhood
+        let isDimmed = false;
+        if (isTraceActive) {
+          isDimmed = !isPathHighlighted;
+        } else if (selectedNodeId) {
+          isDimmed = !isNeighborHighlighted;
+        }
+
         nodes.push({
-          id: node.address.toLowerCase(),
+          id: addrLower,
           type: "custom",
           position: {
             x: hop * X_SPACING + 100,
@@ -115,8 +150,11 @@ export const GraphCanvas: React.FC<Props> = ({
           },
           data: {
             ...node,
+            isDimmed,
+            isPathHighlighted,
+            isNeighborHighlighted,
           },
-          selected: node.address.toLowerCase() === selectedNodeId?.toLowerCase(),
+          selected: isSelected,
         });
       });
     });
@@ -137,6 +175,31 @@ export const GraphCanvas: React.FC<Props> = ({
     setNodes(initialNodes);
     setEdges(initialEdges);
   }, [initialNodes, initialEdges, setNodes, setEdges]);
+
+  // Execute Trace Path algorithm
+  const handleExecuteTrace = () => {
+    if (!startAddr) return;
+
+    const txGraph = new TransactionGraph(graphData);
+    const minValNum = parseFloat(minAmount) || 0;
+
+    const paths = findMultipleTracePaths(txGraph, {
+      startAddress: startAddr,
+      destinationAddress: destAddr || undefined,
+      maxHops,
+      minAmount: minValNum,
+    });
+
+    setDiscoveredPaths(paths);
+    setActivePathIndex(0);
+    setIsTraceActive(true);
+  };
+
+  const handleClearTrace = () => {
+    setIsTraceActive(false);
+    setDiscoveredPaths([]);
+    setActivePathIndex(0);
+  };
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
