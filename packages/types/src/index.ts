@@ -8,4 +8,5 @@ export * from "./investigation";
 export * from "./ai";
 export * from "./timeline";
 export * from "./trace";
+export * from "./alternative-explanations";
 

@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { RiskAssessment } from "@crypto-tracer/types";
+import React, { useState } from "react";
+import { RiskAssessment, Investigation, EvidenceChainItem } from "@crypto-tracer/types";
 import {
   ShieldAlert,
   CheckCircle2,
@@ -11,15 +11,32 @@ import {
   ShieldCheck,
   CircleAlert,
   Eye,
+  ChevronDown,
+  ChevronRight,
+  Hash,
+  Wallet,
+  Building2,
+  Clock,
+  Copy,
+  Check,
 } from "lucide-react";
 
 interface Props {
   risk: RiskAssessment;
+  investigation?: Investigation | null;
 }
 
-export const RiskMeter: React.FC<Props> = ({ risk }) => {
+export const RiskMeter: React.FC<Props> = ({ risk, investigation }) => {
   const score = risk.overallScore;
   const level = risk.riskLevel;
+  const [expandedFactorId, setExpandedFactorId] = useState<string | null>(null);
+  const [copiedHash, setCopiedHash] = useState<string | null>(null);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedHash(text);
+    setTimeout(() => setCopiedHash(null), 2000);
+  };
 
   let gaugeColor = "text-emerald-400 stroke-emerald-500";
   let bgHalo = "from-emerald-500/20";
@@ -80,6 +97,48 @@ export const RiskMeter: React.FC<Props> = ({ risk }) => {
   const confStrokeDash = 157.1; // circumference for r=25
   const confStrokeOffset = confStrokeDash - (confStrokeDash * confScore) / 100;
 
+  // Resolve evidence chain: prefer factor.evidenceChain, fall back to investigation evidence
+  const resolveEvidenceChain = (factor: typeof risk.factors[0]): EvidenceChainItem[] => {
+    if (factor.evidenceChain && factor.evidenceChain.length > 0) {
+      return factor.evidenceChain;
+    }
+    // Fallback: resolve from investigation evidence
+    if (!investigation?.evidence) return [];
+    return factor.evidenceIds
+      .map((evId) => {
+        const ev = investigation.evidence!.find((e) => e.id === evId);
+        if (!ev) return null;
+        const parentPattern = investigation.patterns?.find((p) =>
+          p.evidence.some((pe) => pe.id === evId)
+        );
+        const matchedNode = investigation.graph?.nodes.find(
+          (n) =>
+            n.entityName &&
+            ev.addresses.some(
+              (a) => a.toLowerCase() === n.address.toLowerCase()
+            )
+        );
+        return {
+          evidenceId: evId,
+          ruleId: parentPattern?.ruleId ?? factor.id,
+          patternType: parentPattern?.patternType ?? factor.category,
+          explanation: ev.description,
+          transactionHashes: ev.transactionHashes,
+          wallets: ev.addresses,
+          entityName: matchedNode?.entityName,
+          entityType: matchedNode?.entityType,
+          timestamp: ev.timestamp,
+          severity: ev.severity,
+          confidence: ev.confidence,
+        } as EvidenceChainItem;
+      })
+      .filter(Boolean) as EvidenceChainItem[];
+  };
+
+  const shortAddr = (addr: string) => {
+    if (!addr || addr.length <= 14) return addr || "";
+    return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+  };
 
   return (
     <div className="space-y-5">
@@ -222,7 +281,7 @@ export const RiskMeter: React.FC<Props> = ({ risk }) => {
                       Confirmed Evidence
                     </h4>
                     <ul className="space-y-1.5">
-                      {confidence.strengths.map((s, i) => (
+                      {confidence.strengths.map((s: string, i: number) => (
                         <li
                           key={i}
                           className="text-xs text-gray-300 flex items-start gap-2 pl-1"
@@ -243,7 +302,7 @@ export const RiskMeter: React.FC<Props> = ({ risk }) => {
                       Gaps & Limitations
                     </h4>
                     <ul className="space-y-1.5">
-                      {confidence.limitations.map((l, i) => (
+                      {confidence.limitations.map((l: string, i: number) => (
                         <li
                           key={i}
                           className="text-xs text-gray-400 flex items-start gap-2 pl-1"
@@ -271,7 +330,7 @@ export const RiskMeter: React.FC<Props> = ({ risk }) => {
         </div>
       </div>
 
-      {/* ===== CONTRIBUTING FACTORS (unchanged from original) ===== */}
+      {/* ===== CONTRIBUTING FACTORS WITH EVIDENCE CHAIN ===== */}
       <div className="bg-surface/90 border border-gray-800 rounded-2xl p-5 shadow-xl">
         <div className="space-y-2.5">
           <h4 className="text-xs font-bold uppercase text-gray-400 tracking-wide mb-2 flex items-center gap-1.5">
@@ -279,27 +338,200 @@ export const RiskMeter: React.FC<Props> = ({ risk }) => {
             <span>What raised the risk score ({risk.factors.length} factors)</span>
           </h4>
 
-          {risk.factors.map((factor) => (
-            <div
-              key={factor.id}
-              className="p-3 rounded-xl bg-gray-900/60 border border-gray-800/90 flex items-start justify-between gap-3"
-            >
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold text-gray-200">{factor.name}</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-gray-800 text-gray-400 font-mono">
-                    {factor.category}
+          {risk.factors.map((factor) => {
+            const isExpanded = expandedFactorId === factor.id;
+            const evidenceChain = resolveEvidenceChain(factor);
+            const hasEvidence = evidenceChain.length > 0;
+
+            return (
+              <div
+                key={factor.id}
+                className="rounded-xl bg-gray-900/60 border border-gray-800/90 overflow-hidden transition-all duration-200"
+              >
+                {/* Factor Header — Clickable */}
+                <button
+                  onClick={() =>
+                    setExpandedFactorId(isExpanded ? null : factor.id)
+                  }
+                  className="w-full p-3 flex items-start justify-between gap-3 text-left hover:bg-gray-800/40 transition-colors"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      {hasEvidence && (
+                        isExpanded ? (
+                          <ChevronDown className="w-3.5 h-3.5 text-brand-400 shrink-0" />
+                        ) : (
+                          <ChevronRight className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                        )
+                      )}
+                      <span className="text-xs font-bold text-gray-200">
+                        {factor.name}
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-gray-800 text-gray-400 font-mono">
+                        {factor.category}
+                      </span>
+                      {hasEvidence && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-brand-950/60 text-brand-300 border border-brand-800/60 font-bold">
+                          {evidenceChain.length} evidence
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-400 leading-normal pl-5">
+                      {factor.description}
+                    </p>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-rose-400 shrink-0 px-2 py-0.5 rounded bg-rose-950/60 border border-rose-800/60">
+                    +{factor.scoreDelta}
                   </span>
-                </div>
-                <p className="text-[11px] text-gray-400 leading-normal">
-                  {factor.description}
-                </p>
+                </button>
+
+                {/* Evidence Chain Expansion */}
+                {isExpanded && hasEvidence && (
+                  <div className="border-t border-gray-800/60 bg-black/20">
+                    <div className="px-4 pt-3 pb-1">
+                      <span className="text-[10px] font-bold uppercase text-brand-400/80 tracking-wider flex items-center gap-1.5">
+                        <ShieldAlert className="w-3 h-3" />
+                        Blockchain Evidence Chain
+                      </span>
+                    </div>
+
+                    <div className="px-4 pb-4 space-y-2.5">
+                      {evidenceChain.map((item, idx) => (
+                        <div
+                          key={item.evidenceId || idx}
+                          className="relative pl-4 border-l-2 border-brand-700/40"
+                        >
+                          <div className="p-3 rounded-lg bg-gray-900/80 border border-gray-800/70 space-y-2.5">
+                            {/* Evidence Header */}
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[10px] font-mono font-bold text-gray-400 px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700">
+                                  {item.ruleId}
+                                </span>
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/60">
+                                  {item.patternType}
+                                </span>
+                                <span
+                                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                                    item.severity === "CRITICAL"
+                                      ? "bg-red-950/60 text-red-300 border-red-800/60"
+                                      : item.severity === "HIGH"
+                                      ? "bg-orange-950/60 text-orange-300 border-orange-800/60"
+                                      : "bg-amber-950/60 text-amber-300 border-amber-800/60"
+                                  }`}
+                                >
+                                  {item.severity}
+                                </span>
+                              </div>
+                              <span className="text-[10px] font-mono text-gray-500">
+                                {Math.round(item.confidence * 100)}% conf
+                              </span>
+                            </div>
+
+                            {/* Explanation */}
+                            <p className="text-[11px] text-gray-300 leading-relaxed">
+                              {item.explanation}
+                            </p>
+
+                            {/* Entity Badge */}
+                            {item.entityName && (
+                              <div className="flex items-center gap-1.5">
+                                <Building2 className="w-3 h-3 text-emerald-400" />
+                                <span className="text-[10px] font-bold text-emerald-300">
+                                  {item.entityName}
+                                </span>
+                                {item.entityType && (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/60">
+                                    {item.entityType}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Transaction Hashes */}
+                            {item.transactionHashes.length > 0 && (
+                              <div>
+                                <span className="text-[9px] font-bold uppercase text-gray-500 mb-1 block flex items-center gap-1">
+                                  <Hash className="w-2.5 h-2.5" />
+                                  Transaction Hashes
+                                </span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {item.transactionHashes.map((h, i) => (
+                                    <span
+                                      key={i}
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-black/40 border border-gray-800 text-[10px] font-mono text-gray-300"
+                                    >
+                                      {h.slice(0, 10)}…{h.slice(-4)}
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleCopy(h);
+                                        }}
+                                        className="hover:text-brand-400 transition"
+                                        title="Copy hash"
+                                      >
+                                        {copiedHash === h ? (
+                                          <Check className="w-2.5 h-2.5 text-emerald-400" />
+                                        ) : (
+                                          <Copy className="w-2.5 h-2.5" />
+                                        )}
+                                      </button>
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Wallet Addresses */}
+                            {item.wallets.length > 0 && (
+                              <div>
+                                <span className="text-[9px] font-bold uppercase text-gray-500 mb-1 block flex items-center gap-1">
+                                  <Wallet className="w-2.5 h-2.5" />
+                                  Involved Wallets
+                                </span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {item.wallets.map((w, i) => (
+                                    <span
+                                      key={i}
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-black/40 border border-gray-800 text-[10px] font-mono text-gray-300"
+                                    >
+                                      {shortAddr(w)}
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleCopy(w);
+                                        }}
+                                        className="hover:text-brand-400 transition"
+                                        title="Copy address"
+                                      >
+                                        {copiedHash === w ? (
+                                          <Check className="w-2.5 h-2.5 text-emerald-400" />
+                                        ) : (
+                                          <Copy className="w-2.5 h-2.5" />
+                                        )}
+                                      </button>
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Timestamp */}
+                            <div className="flex items-center gap-1.5 text-[10px] text-gray-500 pt-1 border-t border-gray-800/50">
+                              <Clock className="w-2.5 h-2.5" />
+                              <span>
+                                {new Date(item.timestamp).toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-              <span className="text-xs font-mono font-bold text-rose-400 shrink-0 px-2 py-0.5 rounded bg-rose-950/60 border border-rose-800/60">
-                +{factor.scoreDelta}
-              </span>
-            </div>
-          ))}
+            );
+          })}
 
           {risk.factors.length === 0 && (
             <p className="text-xs text-gray-500 py-4 text-center">
@@ -391,4 +623,5 @@ function computeFallbackConfidence(risk: RiskAssessment): any {
     limitations,
   };
 }
+
 

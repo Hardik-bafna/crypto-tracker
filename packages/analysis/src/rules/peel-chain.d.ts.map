@@ -1,0 +1,1 @@
+{"version":3,"file":"peel-chain.d.ts","sourceRoot":"","sources":["peel-chain.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,gBAAgB,EAAE,MAAM,sBAAsB,CAAC;AACxD,OAAO,EAAE,sBAAsB,EAAY,MAAM,sBAAsB,CAAC;AAExE,wBAAgB,eAAe,CAC7B,KAAK,EAAE,gBAAgB,EACvB,OAAO,GAAE;IAAE,OAAO,CAAC,EAAE,MAAM,CAAC;IAAC,kBAAkB,CAAC,EAAE,MAAM,CAAA;CAAO,GAC9D,sBAAsB,EAAE,CA+F1B"}

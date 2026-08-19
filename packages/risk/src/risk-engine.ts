@@ -4,6 +4,7 @@ import {
   RiskLevel,
   RiskEngineConfig,
   ConfidenceAssessment,
+  EvidenceChainItem,
   PatternDetectionResult,
   Evidence,
   GraphNode,
@@ -57,6 +58,7 @@ export class RiskEngine {
         description: `Direct deposit or withdrawal identified with ${mixerPatterns.length} mixer/privacy pool contract(s). Intentional provenance obfuscation.`,
         severity: "CRITICAL",
         evidenceIds: mixerEvIds,
+        evidenceChain: [],
       });
       recommendations.push(
         "Request withdrawal relayer metadata and deposit timing correlations for identified mixer pools."
@@ -78,6 +80,7 @@ export class RiskEngine {
         description: `Direct interaction with ${illicitPatterns.length} confirmed law-enforcement target(s) or darknet narcotics distribution addresses.`,
         severity: "CRITICAL",
         evidenceIds: illicitEvIds,
+        evidenceChain: [],
       });
       recommendations.push(
         "Issue formal 18 U.S.C. preservation request and prepare search warrant for linked accounts."
@@ -99,6 +102,7 @@ export class RiskEngine {
         description: `Detected ${peelPatterns.length} sequential peel chain structure(s) peeling off incremental fees while forwarding bulk funds.`,
         severity: "HIGH",
         evidenceIds: peelEvIds,
+        evidenceChain: [],
       });
       recommendations.push(
         "Monitor peeled change outputs for eventual consolidation or unhosted ATM cashouts."
@@ -120,6 +124,7 @@ export class RiskEngine {
         description: "Funds moved through intermediary addresses with minimal holding latency (< 30 minutes per hop).",
         severity: "MEDIUM",
         evidenceIds: rapidEvIds,
+        evidenceChain: [],
       });
     }
 
@@ -138,6 +143,7 @@ export class RiskEngine {
         description: "Funds routed across bridge protocols to migrate balances to alternative blockchain networks.",
         severity: "HIGH",
         evidenceIds: bridgeEvIds,
+        evidenceChain: [],
       });
       recommendations.push(
         "Serve 2703(d) order or MLAT request to destination chain bridge validator operators."
@@ -159,6 +165,7 @@ export class RiskEngine {
         description: "Funds passed through extended chains of intermediate unhosted wallets to create distance from origin.",
         severity: "MEDIUM",
         evidenceIds: hopEvIds,
+        evidenceChain: [],
       });
     }
 
@@ -177,6 +184,7 @@ export class RiskEngine {
         description: "Rapid fan-out distribution to mule wallets or fan-in consolidation into cashout hubs.",
         severity: "HIGH",
         evidenceIds: fanEvIds,
+        evidenceChain: [],
       });
     }
 
@@ -211,6 +219,43 @@ export class RiskEngine {
 
     // Compute confidence assessment
     const confidence = this.evaluateConfidence(params);
+
+    // Resolve evidence chains for each factor
+    const nodes = params.nodes || [];
+    for (const factor of factors) {
+      const chain: EvidenceChainItem[] = [];
+      for (const evId of factor.evidenceIds) {
+        const ev = params.evidence.find((e) => e.id === evId);
+        const parentPattern = params.patterns.find((p) =>
+          p.evidence.some((pe) => pe.id === evId)
+        );
+
+        // Try to resolve entity info from nodes involved
+        const involvedAddresses = ev?.addresses ?? [];
+        const matchedNode = nodes.find(
+          (n) =>
+            n.entityName &&
+            involvedAddresses.some(
+              (a) => a.toLowerCase() === n.address.toLowerCase()
+            )
+        );
+
+        chain.push({
+          evidenceId: evId,
+          ruleId: parentPattern?.ruleId ?? factor.id,
+          patternType: parentPattern?.patternType ?? factor.category,
+          explanation: ev?.description ?? factor.description,
+          transactionHashes: ev?.transactionHashes ?? [],
+          wallets: ev?.addresses ?? [],
+          entityName: matchedNode?.entityName,
+          entityType: matchedNode?.entityType,
+          timestamp: ev?.timestamp ?? new Date(),
+          severity: ev?.severity ?? factor.severity,
+          confidence: ev?.confidence ?? 0.5,
+        });
+      }
+      factor.evidenceChain = chain;
+    }
 
     return {
       target,
@@ -317,7 +362,7 @@ export class RiskEngine {
 
     // --- 5. Cluster coverage (0-15 pts) ---
     const clusters = params.clusters || [];
-    const clusteredAddresses = new Set(clusters.flatMap((c) => c.addresses));
+    const clusteredAddresses = new Set(clusters.flatMap((c) => c.members || []));
     const clusterRatio = totalNodes > 0 ? clusteredAddresses.size / totalNodes : 0;
 
     if (clusterRatio >= 0.3) {

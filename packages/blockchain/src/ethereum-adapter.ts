@@ -390,8 +390,8 @@ export class EthereumAdapter extends BaseBlockchainAdapter {
           let asset = "ETH";
           let formattedAmount = `${ethVal} ETH`;
           if ((ethVal === "0.0000" || wei === "0") && tokenTransfers.length > 0) {
-            asset = tokenTransfers[0].symbol;
-            formattedAmount = `${tokenTransfers[0].formattedAmount} ${tokenTransfers[0].symbol}`;
+            asset = tokenTransfers[0].tokenSymbol;
+            formattedAmount = `${tokenTransfers[0].formattedAmount} ${tokenTransfers[0].tokenSymbol}`;
           }
 
           liveTxs.push({
@@ -441,8 +441,9 @@ export class EthereumAdapter extends BaseBlockchainAdapter {
               } catch {}
 
               const tt: TokenTransfer = {
-                tokenAddress: item.token?.address || "0x0",
-                symbol: tokenSymbol,
+                contractAddress: item.token?.address || "0x0",
+                tokenSymbol,
+                tokenDecimals,
                 amount: item.total?.value || "0",
                 formattedAmount: formattedAmt,
                 from: item.from?.hash || address,

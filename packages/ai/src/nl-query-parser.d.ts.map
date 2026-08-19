@@ -1,0 +1,1 @@
+{"version":3,"file":"nl-query-parser.d.ts","sourceRoot":"","sources":["nl-query-parser.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,UAAU,EAAE,MAAM,sBAAsB,CAAC;AAElD,qBAAa,aAAa;IACxB,MAAM,CAAC,UAAU,CAAC,KAAK,EAAE,MAAM,EAAE,aAAa,CAAC,EAAE,MAAM,EAAE,YAAY,GAAE,MAAmB,GAAG,UAAU,EAAE;CAyG1G"}

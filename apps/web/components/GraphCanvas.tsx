@@ -53,8 +53,10 @@ export const GraphCanvas: React.FC<Props> = ({
   onSelectEdge,
   selectedNodeId,
 }) => {
-  // 1. Filter View State (Zero-value contract call filter)
+  // 1. Filter View State (Zero-value contract call filter & Chain filter)
   const [showAllNodes, setShowAllNodes] = useState(false);
+  const [chainFilter, setChainFilter] = useState<string>("ALL");
+  const [isSwimlaneMode, setIsSwimlaneMode] = useState<boolean>(true);
 
   // 2. Trace Money Mode State
   const [isTracePanelOpen, setIsTracePanelOpen] = useState(false);
@@ -67,6 +69,15 @@ export const GraphCanvas: React.FC<Props> = ({
   const [discoveredPaths, setDiscoveredPaths] = useState<TracePathDetail[]>([]);
   const [activePathIndex, setActivePathIndex] = useState<number>(0);
   const [isTraceActive, setIsTraceActive] = useState(false);
+
+  // Detected unique chains in current graph
+  const uniqueChains = useMemo(() => {
+    const set = new Set<string>();
+    graphData.nodes.forEach((n) => {
+      if (n.chain) set.add(n.chain.toLowerCase());
+    });
+    return Array.from(set);
+  }, [graphData.nodes]);
 
   // Set default start address from target or first node
   useEffect(() => {
@@ -121,6 +132,10 @@ export const GraphCanvas: React.FC<Props> = ({
     const nodes: Node[] = [];
     const edges: Edge[] = [];
 
+    // Map chains to vertical swimlane offsets if swimlane mode is active
+    const chainLaneIndexMap = new Map<string, number>();
+    uniqueChains.forEach((c, idx) => chainLaneIndexMap.set(c, idx));
+
     // Group nodes by hopLevel or BFS layer
     const layerMap = new Map<number, GraphNode[]>();
 
@@ -133,7 +148,8 @@ export const GraphCanvas: React.FC<Props> = ({
 
     const sortedHops = Array.from(layerMap.keys()).sort((a, b) => a - b);
     const X_SPACING = 340;
-    const Y_SPACING = 150;
+    const Y_SPACING = 160;
+    const CHAIN_LANE_HEIGHT = 280;
 
     const hasValueEdges = graphData.edges.some((e) => {
       const val = parseFloat(e.amount || e.formattedAmount);
@@ -157,8 +173,15 @@ export const GraphCanvas: React.FC<Props> = ({
       const isPathHighlighted = activePathEdgeIds.has(edge.id);
       const isNeighborHighlighted = neighborEdgeIds.has(edge.id);
 
+      const matchesChainFilter =
+        chainFilter === "ALL" ||
+        edge.chain.toLowerCase() === chainFilter.toLowerCase() ||
+        edge.isCrossChain;
+
       let isDimmed = false;
-      if (isTraceActive) {
+      if (!matchesChainFilter) {
+        isDimmed = true;
+      } else if (isTraceActive) {
         isDimmed = !isPathHighlighted;
       } else if (selectedNodeId) {
         isDimmed = !isNeighborHighlighted;
@@ -191,24 +214,36 @@ export const GraphCanvas: React.FC<Props> = ({
 
       nodesInHop.forEach((node, idx) => {
         const addrLower = node.address.toLowerCase();
+        const nodeChain = (node.chain || "ethereum").toLowerCase();
 
         const isPathHighlighted = activePathNodeIds.has(addrLower);
         const isNeighborHighlighted = neighborNodeIds.has(addrLower);
         const isSelected = addrLower === selectedNodeId?.toLowerCase();
 
+        const matchesChainFilter =
+          chainFilter === "ALL" || nodeChain === chainFilter.toLowerCase();
+
         let isDimmed = false;
-        if (isTraceActive) {
+        if (!matchesChainFilter) {
+          isDimmed = true;
+        } else if (isTraceActive) {
           isDimmed = !isPathHighlighted;
         } else if (selectedNodeId) {
           isDimmed = !isNeighborHighlighted;
         }
+
+        // Calculate Y position with optional chain swimlane offset
+        const laneOffset =
+          isSwimlaneMode && uniqueChains.length > 1
+            ? (chainLaneIndexMap.get(nodeChain) || 0) * CHAIN_LANE_HEIGHT
+            : 0;
 
         nodes.push({
           id: addrLower,
           type: "custom",
           position: {
             x: hop * X_SPACING + 100,
-            y: startY + idx * Y_SPACING + 280,
+            y: startY + idx * Y_SPACING + 280 + laneOffset,
           },
           data: {
             ...node,
@@ -231,6 +266,9 @@ export const GraphCanvas: React.FC<Props> = ({
     graphData,
     selectedNodeId,
     showAllNodes,
+    chainFilter,
+    isSwimlaneMode,
+    uniqueChains,
     isTraceActive,
     activePathNodeIds,
     activePathEdgeIds,
@@ -298,7 +336,7 @@ export const GraphCanvas: React.FC<Props> = ({
   return (
     <div className="w-full h-full min-h-[500px] relative bg-[#0b0f19]">
       {/* Top Filter Overlay Toggle */}
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-gray-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-gray-800 text-xs shadow-xl">
+      <div className="absolute top-4 left-4 z-10 flex flex-wrap items-center gap-2 bg-gray-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-gray-800 text-xs shadow-xl">
         <span className="text-gray-400 font-medium">Filter View:</span>
         <button
           onClick={() => setShowAllNodes(false)}
@@ -320,6 +358,51 @@ export const GraphCanvas: React.FC<Props> = ({
         >
           👁️ Include Contract Calls ({totalNodesCount - 1})
         </button>
+
+        {/* Multi-Chain Controls */}
+        {uniqueChains.length > 1 && (
+          <>
+            <div className="h-4 w-px bg-gray-800 mx-1" />
+            <span className="text-cyan-400 font-bold flex items-center gap-1">
+              🌉 Cross-Chain Lanes:
+            </span>
+            <button
+              onClick={() => setIsSwimlaneMode(!isSwimlaneMode)}
+              className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                isSwimlaneMode
+                  ? "bg-cyan-950 text-cyan-300 border-cyan-700"
+                  : "bg-gray-800 text-gray-400 border-gray-700"
+              }`}
+            >
+              {isSwimlaneMode ? "Swimlanes ON" : "Swimlanes OFF"}
+            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setChainFilter("ALL")}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                  chainFilter === "ALL"
+                    ? "bg-gray-700 text-white border-gray-600"
+                    : "text-gray-400 border-gray-800 hover:text-gray-200"
+                }`}
+              >
+                All Chains ({uniqueChains.length})
+              </button>
+              {uniqueChains.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setChainFilter(c)}
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase font-bold border transition ${
+                    chainFilter.toLowerCase() === c.toLowerCase()
+                      ? "bg-cyan-600 text-white border-cyan-400"
+                      : "text-gray-400 border-gray-800 hover:text-gray-200"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <button
           onClick={() => setIsTracePanelOpen(!isTracePanelOpen)}

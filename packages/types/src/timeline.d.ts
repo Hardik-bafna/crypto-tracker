@@ -1,0 +1,57 @@
+import { z } from "zod";
+export declare const TimelineEventTypeEnum: z.ZodEnum<["INITIAL_FUNDS", "LARGE_TRANSFER", "FAN_OUT", "FAN_IN", "MIXER_INTERACTION", "BRIDGE_INTERACTION", "RAPID_ACTIVITY", "HIGH_HOP_LAYERING", "EXCHANGE_INTERACTION", "PEEL_CHAIN"]>;
+export type TimelineEventType = z.infer<typeof TimelineEventTypeEnum>;
+export declare const TimelineEventSchema: z.ZodObject<{
+    id: z.ZodString;
+    timestamp: z.ZodDate;
+    eventType: z.ZodEnum<["INITIAL_FUNDS", "LARGE_TRANSFER", "FAN_OUT", "FAN_IN", "MIXER_INTERACTION", "BRIDGE_INTERACTION", "RAPID_ACTIVITY", "HIGH_HOP_LAYERING", "EXCHANGE_INTERACTION", "PEEL_CHAIN"]>;
+    title: z.ZodString;
+    description: z.ZodString;
+    sourceAddress: z.ZodOptional<z.ZodString>;
+    sourceEntity: z.ZodOptional<z.ZodString>;
+    destinationAddress: z.ZodOptional<z.ZodString>;
+    destinationEntity: z.ZodOptional<z.ZodString>;
+    txHash: z.ZodOptional<z.ZodString>;
+    amount: z.ZodOptional<z.ZodString>;
+    asset: z.ZodOptional<z.ZodString>;
+    patternType: z.ZodOptional<z.ZodEnum<["FAN_OUT", "FAN_IN", "RAPID_MOVEMENT", "PEEL_CHAIN", "HIGH_HOP_MOVEMENT", "MIXER_INTERACTION", "BRIDGE_INTERACTION", "ILLICIT_INTERACTION", "CIRCULAR_FLOW", "STRUCTURING"]>>;
+    severity: z.ZodEnum<["LOW", "MEDIUM", "HIGH", "CRITICAL"]>;
+    relatedNodeIds: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+    relatedEdgeIds: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+}, "strip", z.ZodTypeAny, {
+    id: string;
+    timestamp: Date;
+    description: string;
+    title: string;
+    severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+    eventType: "FAN_OUT" | "FAN_IN" | "PEEL_CHAIN" | "MIXER_INTERACTION" | "BRIDGE_INTERACTION" | "INITIAL_FUNDS" | "LARGE_TRANSFER" | "RAPID_ACTIVITY" | "HIGH_HOP_LAYERING" | "EXCHANGE_INTERACTION";
+    relatedNodeIds: string[];
+    relatedEdgeIds: string[];
+    txHash?: string | undefined;
+    amount?: string | undefined;
+    asset?: string | undefined;
+    patternType?: "FAN_OUT" | "FAN_IN" | "RAPID_MOVEMENT" | "PEEL_CHAIN" | "HIGH_HOP_MOVEMENT" | "MIXER_INTERACTION" | "BRIDGE_INTERACTION" | "ILLICIT_INTERACTION" | "CIRCULAR_FLOW" | "STRUCTURING" | undefined;
+    sourceAddress?: string | undefined;
+    sourceEntity?: string | undefined;
+    destinationAddress?: string | undefined;
+    destinationEntity?: string | undefined;
+}, {
+    id: string;
+    timestamp: Date;
+    description: string;
+    title: string;
+    severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+    eventType: "FAN_OUT" | "FAN_IN" | "PEEL_CHAIN" | "MIXER_INTERACTION" | "BRIDGE_INTERACTION" | "INITIAL_FUNDS" | "LARGE_TRANSFER" | "RAPID_ACTIVITY" | "HIGH_HOP_LAYERING" | "EXCHANGE_INTERACTION";
+    txHash?: string | undefined;
+    amount?: string | undefined;
+    asset?: string | undefined;
+    patternType?: "FAN_OUT" | "FAN_IN" | "RAPID_MOVEMENT" | "PEEL_CHAIN" | "HIGH_HOP_MOVEMENT" | "MIXER_INTERACTION" | "BRIDGE_INTERACTION" | "ILLICIT_INTERACTION" | "CIRCULAR_FLOW" | "STRUCTURING" | undefined;
+    sourceAddress?: string | undefined;
+    sourceEntity?: string | undefined;
+    destinationAddress?: string | undefined;
+    destinationEntity?: string | undefined;
+    relatedNodeIds?: string[] | undefined;
+    relatedEdgeIds?: string[] | undefined;
+}>;
+export type TimelineEvent = z.infer<typeof TimelineEventSchema>;
+//# sourceMappingURL=timeline.d.ts.map

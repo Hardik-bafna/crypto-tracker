@@ -6,3 +6,4 @@ export * from "./rules/high-hop";
 export * from "./rules/known-service";
 export * from "./rules/cross-chain";
 export * from "./pattern-engine";
+export * from "./alternative-explanation-engine";

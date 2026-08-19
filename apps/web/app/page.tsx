@@ -14,6 +14,7 @@ import { GraphCanvas } from "../components/GraphCanvas";
 import { InspectorDrawer } from "../components/InspectorDrawer";
 import { RiskMeter } from "../components/RiskMeter";
 import { EvidencePanel } from "../components/EvidencePanel";
+import { AlternativeExplanationsPanel } from "../components/AlternativeExplanationsPanel";
 import { TimelinePanel } from "../components/TimelinePanel";
 import { ClustersPanel } from "../components/ClustersPanel";
 import { AICopilotDrawer } from "../components/AICopilotDrawer";
@@ -24,11 +25,11 @@ import {
   ShieldAlert,
   Clock,
   Layers,
-  Sparkles,
   Search,
+  Scale,
 } from "lucide-react";
 
-type TabType = "graph" | "risk" | "evidence" | "timeline" | "clusters";
+type TabType = "graph" | "risk" | "evidence" | "alt-explanations" | "timeline" | "clusters";
 
 export default function Home() {
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
@@ -72,6 +73,26 @@ export default function Home() {
     }
     loadInitial();
   }, []);
+
+  // Compute visible tabs (hide tabs that have 0 items)
+  const visibleTabs = [
+    { id: "graph" as TabType, label: "Graph Visualizer", icon: GitFork, alwaysShow: true },
+    { id: "risk" as TabType, label: "Risk & Factors", icon: Activity, alwaysShow: true },
+    { id: "evidence" as TabType, label: "Evidence Ledger", icon: ShieldAlert, count: investigation?.evidence?.length },
+    { id: "alt-explanations" as TabType, label: "Alt. Explanations", icon: Scale, count: investigation?.alternativeExplanations?.length },
+    { id: "timeline" as TabType, label: "Investigation Timeline", icon: Clock, count: investigation?.timeline?.length },
+    { id: "clusters" as TabType, label: "Wallet Clusters", icon: Layers, count: investigation?.clusters?.length },
+  ].filter((tab) => tab.alwaysShow || (tab.count !== undefined && tab.count > 0));
+
+  // Fallback to "graph" tab if currently selected tab is hidden
+  useEffect(() => {
+    if (investigation) {
+      const isCurrentTabVisible = visibleTabs.some((t) => t.id === activeTab);
+      if (!isCurrentTabVisible) {
+        setActiveTab("graph");
+      }
+    }
+  }, [investigation, activeTab, visibleTabs]);
 
   const handleSearch = async (params: {
     target: string;
@@ -136,13 +157,7 @@ export default function Home() {
         <div className="h-12 border-b border-gray-800 bg-surface/40 px-6 flex items-center justify-between shrink-0">
           {/* Navigation Tabs */}
           <div className="flex items-center gap-1">
-            {[
-              { id: "graph" as TabType, label: "Graph Visualizer", icon: GitFork },
-              { id: "risk" as TabType, label: "Risk & Factors", icon: Activity },
-              { id: "evidence" as TabType, label: "Evidence Ledger", icon: ShieldAlert, count: investigation?.evidence?.length },
-              { id: "timeline" as TabType, label: "Investigation Timeline", icon: Clock, count: investigation?.timeline?.length },
-              { id: "clusters" as TabType, label: "Wallet Clusters", icon: Layers, count: investigation?.clusters?.length },
-            ].map((tab) => {
+            {visibleTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
@@ -180,7 +195,9 @@ export default function Home() {
               </div>
               <div>
                 <span className="text-gray-500">VOLUME: </span>
-                <span className="text-gray-200 font-bold">{investigation.stats?.totalVolume ?? "0"} {investigation.chain === "bitcoin" ? "BTC" : "ETH"}</span>
+                <span className="text-gray-200 font-bold">
+                  {investigation.stats?.totalVolume ?? "0"} {investigation.chain === "bitcoin" ? "BTC" : "ETH"}
+                </span>
               </div>
             </div>
           )}
@@ -239,17 +256,27 @@ export default function Home() {
 
           {activeTab === "risk" && investigation?.risk && (
             <div className="flex-1 p-6 overflow-y-auto max-w-5xl mx-auto w-full">
-              <RiskMeter risk={investigation.risk} />
+              <RiskMeter risk={investigation.risk} investigation={investigation} />
             </div>
           )}
 
-          {activeTab === "evidence" && investigation?.evidence && (
+          {activeTab === "evidence" && investigation?.evidence && investigation.evidence.length > 0 && (
             <div className="flex-1 p-6 overflow-y-auto max-w-5xl mx-auto w-full">
               <EvidencePanel evidenceList={investigation.evidence} />
             </div>
           )}
 
-          {activeTab === "timeline" && investigation?.timeline && (
+          {activeTab === "alt-explanations" &&
+            investigation?.alternativeExplanations &&
+            investigation.alternativeExplanations.length > 0 && (
+              <div className="flex-1 p-6 overflow-y-auto max-w-5xl mx-auto w-full">
+                <AlternativeExplanationsPanel
+                  alternativeExplanations={investigation.alternativeExplanations}
+                />
+              </div>
+            )}
+
+          {activeTab === "timeline" && investigation?.timeline && investigation.timeline.length > 0 && (
             <div className="flex-1 p-6 overflow-y-auto max-w-4xl mx-auto w-full">
               <TimelinePanel
                 events={investigation.timeline}
@@ -275,7 +302,7 @@ export default function Home() {
             </div>
           )}
 
-          {activeTab === "clusters" && investigation?.clusters && (
+          {activeTab === "clusters" && investigation?.clusters && investigation.clusters.length > 0 && (
             <div className="flex-1 p-6 overflow-y-auto max-w-5xl mx-auto w-full">
               <ClustersPanel clusters={investigation.clusters} />
             </div>
