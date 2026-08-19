@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 250" width="100%" height="100%" style="background: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <linearGradient id="bg-p" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0f19"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <filter id="glow-step" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <rect width="1100" height="250" fill="url(#bg-p)"/>
+
+  <!-- Pipeline Title -->
+  <text x="550" y="30" fill="#ffffff" font-size="16" font-weight="800" text-anchor="middle" letter-spacing="1">CRYPTO TRACE FORENSIC EVIDENCE PIPELINE</text>
+  <text x="550" y="48" fill="#94a3b8" font-size="11" text-anchor="middle">From Obfuscated Darknet Proceeds to Statutory Exchange Subpoenas</text>
+
+  <!-- Step 1 -->
+  <g transform="translate(30, 75)">
+    <rect x="0" y="0" width="180" height="135" rx="8" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
+    <circle cx="24" cy="24" r="12" fill="#ef4444"/>
+    <text x="24" y="28" fill="#fff" font-size="11" font-weight="bold" text-anchor="middle">1</text>
+    <text x="44" y="28" fill="#fca5a5" font-size="11" font-weight="700">SUSPECT SEED</text>
+
+    <text x="12" y="54" fill="#f8fafc" font-size="10" font-weight="bold">Darknet Deposit</text>
+    <text x="12" y="70" fill="#94a3b8" font-size="9">• Suspect Wallet Address</text>
+    <text x="12" y="84" fill="#94a3b8" font-size="9">• Seized Transaction Hash</text>
+    <text x="12" y="98" fill="#94a3b8" font-size="9">• Narcotics Sale Proceeds</text>
+    
+    <rect x="12" y="108" width="156" height="18" rx="4" fill="#7f1d1d"/>
+    <text x="90" y="121" fill="#fecaca" font-size="8" font-weight="bold" text-anchor="middle">INITIAL SEIZURE</text>
+  </g>
+
+  <!-- Connector 1->2 -->
+  <path d="M 215 142 L 238 142" stroke="#ef4444" stroke-width="2.5"/>
+  <polygon points="236,137 244,142 236,147" fill="#ef4444"/>
+
+  <!-- Step 2 -->
+  <g transform="translate(245, 75)">
+    <rect x="0" y="0" width="180" height="135" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+    <circle cx="24" cy="24" r="12" fill="#f59e0b"/>
+    <text x="24" y="28" fill="#fff" font-size="11" font-weight="bold" text-anchor="middle">2</text>
+    <text x="44" y="28" fill="#fde68a" font-size="11" font-weight="700">OBFUSCATION</text>
+
+    <text x="12" y="54" fill="#f8fafc" font-size="10" font-weight="bold">Layering Tactics</text>
+    <text x="12" y="70" fill="#94a3b8" font-size="9">• Tornado Cash Mixers</text>
+    <text x="12" y="84" fill="#94a3b8" font-size="9">• Synapse Bridge Hopping</text>
+    <text x="12" y="98" fill="#94a3b8" font-size="9">• Peel Chains &amp; Smurfing</text>
+
+    <rect x="12" y="108" width="156" height="18" rx="4" fill="#78350f"/>
+    <text x="90" y="121" fill="#fef3c7" font-size="8" font-weight="bold" text-anchor="middle">LINEAGE BREAK ATTEMPT</text>
+  </g>
+
+  <!-- Connector 2->3 -->
+  <path d="M 430 142 L 453 142" stroke="#f59e0b" stroke-width="2.5"/>
+  <polygon points="451,137 459,142 451,147" fill="#f59e0b"/>
+
+  <!-- Step 3 -->
+  <g transform="translate(460, 75)">
+    <rect x="0" y="0" width="180" height="135" rx="8" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.5"/>
+    <circle cx="24" cy="24" r="12" fill="#6366f1"/>
+    <text x="24" y="28" fill="#fff" font-size="11" font-weight="bold" text-anchor="middle">3</text>
+    <text x="44" y="28" fill="#c7d2fe" font-size="11" font-weight="700">GRAPH ENGINE</text>
+
+    <text x="12" y="54" fill="#f8fafc" font-size="10" font-weight="bold">CryptoTrace Analysis</text>
+    <text x="12" y="70" fill="#94a3b8" font-size="9">• BFS/DFS Path Reconstruction</text>
+    <text x="12" y="84" fill="#94a3b8" font-size="9">• 7 Pattern Rule Engines</text>
+    <text x="12" y="98" fill="#94a3b8" font-size="9">• Bitcoin CIOH Clustering</text>
+
+    <rect x="12" y="108" width="156" height="18" rx="4" fill="#312e81"/>
+    <text x="90" y="121" fill="#e0e7ff" font-size="8" font-weight="bold" text-anchor="middle">DE-ANONYMIZATION</text>
+  </g>
+
+  <!-- Connector 3->4 -->
+  <path d="M 645 142 L 668 142" stroke="#6366f1" stroke-width="2.5"/>
+  <polygon points="666,137 674,142 666,147" fill="#6366f1"/>
+
+  <!-- Step 4 -->
+  <g transform="translate(675, 75)">
+    <rect x="0" y="0" width="180" height="135" rx="8" fill="#1e293b" stroke="#06b6d4" stroke-width="1.5"/>
+    <circle cx="24" cy="24" r="12" fill="#06b6d4"/>
+    <text x="24" y="28" fill="#fff" font-size="11" font-weight="bold" text-anchor="middle">4</text>
+    <text x="44" y="28" fill="#a5f3fc" font-size="11" font-weight="700">CEX ENDPOINT</text>
+
+    <text x="12" y="54" fill="#f8fafc" font-size="10" font-weight="bold">Real Receiver Found</text>
+    <text x="12" y="70" fill="#94a3b8" font-size="9">• KYC Centralized Exchange</text>
+    <text x="12" y="84" fill="#94a3b8" font-size="9">• Binance / Coinbase / Kraken</text>
+    <text x="12" y="98" fill="#94a3b8" font-size="9">• Deposit Address Identified</text>
+
+    <rect x="12" y="108" width="156" height="18" rx="4" fill="#164e63"/>
+    <text x="90" y="121" fill="#cffaff" font-size="8" font-weight="bold" text-anchor="middle">CASHOUT DESTINATION</text>
+  </g>
+
+  <!-- Connector 4->5 -->
+  <path d="M 860 142 L 883 142" stroke="#06b6d4" stroke-width="2.5"/>
+  <polygon points="881,137 889,142 881,147" fill="#06b6d4"/>
+
+  <!-- Step 5 -->
+  <g transform="translate(890, 75)" filter="url(#glow-step)">
+    <rect x="0" y="0" width="180" height="135" rx="8" fill="#064e3b" stroke="#10b981" stroke-width="2"/>
+    <circle cx="24" cy="24" r="12" fill="#10b981"/>
+    <text x="24" y="28" fill="#fff" font-size="11" font-weight="bold" text-anchor="middle">5</text>
+    <text x="44" y="28" fill="#a7f3d0" font-size="11" font-weight="700">LEGAL SUBPOENA</text>
+
+    <text x="12" y="54" fill="#ffffff" font-size="10" font-weight="bold">Judicial Dossier</text>
+    <text x="12" y="70" fill="#a7f3d0" font-size="9">• Sec 67 NDPS / 91 CrPC</text>
+    <text x="12" y="84" fill="#a7f3d0" font-size="9">• 18 U.S.C. § 2703(d)</text>
+    <text x="12" y="98" fill="#a7f3d0" font-size="9">• Freeze Notice &amp; KYC Compel</text>
+
+    <rect x="12" y="108" width="156" height="18" rx="4" fill="#047857"/>
+    <text x="90" y="121" fill="#ffffff" font-size="8" font-weight="bold" text-anchor="middle">UNMASK REAL HUMAN</text>
+  </g>
+</svg>
