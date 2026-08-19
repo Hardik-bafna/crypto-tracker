@@ -58,11 +58,9 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
     entityLabel = "Known Bridge";
     badgeColor = "bg-cyan-950/90 text-cyan-300 border-cyan-500";
     EntityIcon = ArrowDownRight;
-  } else if (entityType === "EXCHANGE") {
-    badgeColor = "bg-emerald-950/80 text-emerald-300 border-emerald-500";
-    EntityIcon = Landmark;
   } else if (entityType === "SERVICE") {
-    badgeColor = "bg-purple-950/80 text-purple-300 border-purple-500";
+    entityLabel = "DEX / Protocol";
+    badgeColor = "bg-purple-950/90 text-purple-300 border-purple-500";
     EntityIcon = Coins;
   } else if (entityType === "KNOWN_ILLICIT" || entityType === "SCAM") {
     entityLabel = "Flagged Target";
@@ -74,24 +72,37 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
     EntityIcon = ShieldAlert;
   }
 
-  // Border halo
-  const borderClass = selected
-    ? "border-brand-500 shadow-[0_0_20px_rgba(99,102,241,0.5)] ring-2 ring-brand-500"
-    : isTarget
-    ? "border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]"
-    : entityType === "MIXER" || entityType === "KNOWN_ILLICIT"
-    ? "border-rose-600"
-    : entityType === "EXCHANGE"
-    ? "border-emerald-600"
-    : entityType === "BRIDGE"
-    ? "border-cyan-600"
-    : entityType === "SERVICE"
-    ? "border-purple-600"
-    : "border-gray-800 hover:border-gray-600";
+  // Border halo and highlight effects
+  let borderClass = "border-gray-800 hover:border-gray-600";
+
+  if (isPath) {
+    borderClass = "border-cyan-400 shadow-[0_0_22px_rgba(34,211,238,0.7)] ring-2 ring-cyan-400";
+  } else if (selected) {
+    borderClass = "border-brand-500 shadow-[0_0_20px_rgba(99,102,241,0.5)] ring-2 ring-brand-500";
+  } else if (isNeighbor) {
+    borderClass = "border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.4)] ring-1 ring-amber-400";
+  } else if (isTarget) {
+    borderClass = "border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]";
+  } else if (entityType === "MIXER" || entityType === "KNOWN_ILLICIT") {
+    borderClass = "border-rose-600";
+  } else if (entityType === "EXCHANGE") {
+    borderClass = "border-emerald-600";
+  } else if (entityType === "BRIDGE") {
+    borderClass = "border-cyan-600";
+  } else if (entityType === "SERVICE") {
+    borderClass = "border-purple-600";
+  }
+
+  const opacityClass = isDimmed
+    ? "opacity-20 grayscale transition-opacity duration-300"
+    : "opacity-100 transition-opacity duration-300";
+
+  const displayName = entityName || (isTarget ? "Target Wallet" : "Unknown Wallet");
+  const formattedAddress = `${nodeData.address.slice(0, 6)}...${nodeData.address.slice(-4)}`;
 
   return (
     <div
-      className={`relative min-w-[200px] max-w-[260px] rounded-xl bg-gray-900/95 backdrop-blur-md p-3.5 shadow-2xl border ${borderClass} ${opacityClass} cursor-pointer`}
+      className={`relative min-w-[200px] max-w-[260px] rounded-xl bg-gray-900/95 backdrop-blur-md p-3.5 shadow-2xl border transition-all duration-200 cursor-pointer ${borderClass} ${opacityClass}`}
     >
       <Handle
         type="target"
@@ -127,7 +138,6 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
       <div className="font-mono text-[11px] text-gray-300 font-medium mb-2 break-all bg-black/50 px-2 py-1 rounded border border-gray-800/80 flex items-center justify-between">
         <span title={nodeData.address}>{formattedAddress}</span>
       </div>
-
 
       {/* Footer Info */}
       <div className="flex items-center justify-between text-[10px] text-gray-400 pt-1.5 border-t border-gray-800/60">
