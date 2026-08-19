@@ -40,8 +40,10 @@ export const GraphCanvas: React.FC<Props> = ({
   onSelectEdge,
   selectedNodeId,
 }) => {
+  const [showAllNodes, setShowAllNodes] = React.useState(false);
+
   // Convert GraphData into React Flow nodes and edges with layered positioning
-  const { initialNodes, initialEdges } = useMemo(() => {
+  const { initialNodes, initialEdges, totalNodesCount, valueNodesCount } = useMemo(() => {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
 
@@ -59,8 +61,47 @@ export const GraphCanvas: React.FC<Props> = ({
     const X_SPACING = 340;
     const Y_SPACING = 150;
 
+    const hasValueEdges = graphData.edges.some((e) => {
+      const val = parseFloat(e.amount || e.formattedAmount);
+      return !isNaN(val) && val > 0;
+    });
+
+    const activeNodeIds = new Set<string>();
+    let valueEdgesCount = 0;
+
+    graphData.edges.forEach((edge) => {
+      const val = parseFloat(edge.amount || edge.formattedAmount);
+      const isZeroValue = (isNaN(val) || val === 0) && !edge.isTokenTransfer && !edge.isCrossChain;
+
+      if (!isZeroValue) {
+        valueEdgesCount++;
+      }
+
+      // Suppress zero-value ETH contract calls if showAllNodes is false
+      if (!showAllNodes && hasValueEdges && isZeroValue) {
+        return;
+      }
+
+      edges.push({
+        id: edge.id,
+        source: edge.source.toLowerCase(),
+        target: edge.target.toLowerCase(),
+        type: "custom",
+        data: {
+          ...edge,
+          formattedAmount: isZeroValue ? "Contract Call" : edge.formattedAmount,
+        },
+        animated: edge.isCrossChain,
+      });
+
+      activeNodeIds.add(edge.source.toLowerCase());
+      activeNodeIds.add(edge.target.toLowerCase());
+    });
+
     sortedHops.forEach((hop) => {
-      const nodesInHop = layerMap.get(hop) || [];
+      const nodesInHop = (layerMap.get(hop) || []).filter(
+        (n) => n.isTarget || activeNodeIds.has(n.address.toLowerCase())
+      );
       const totalInHop = nodesInHop.length;
       const startY = -((totalInHop - 1) * Y_SPACING) / 2;
 
@@ -80,26 +121,18 @@ export const GraphCanvas: React.FC<Props> = ({
       });
     });
 
-    graphData.edges.forEach((edge) => {
-      edges.push({
-        id: edge.id,
-        source: edge.source.toLowerCase(),
-        target: edge.target.toLowerCase(),
-        type: "custom",
-        data: {
-          ...edge,
-        },
-        animated: edge.isCrossChain,
-      });
-    });
-
-    return { initialNodes: nodes, initialEdges: edges };
-  }, [graphData, selectedNodeId]);
+    return {
+      initialNodes: nodes,
+      initialEdges: edges,
+      totalNodesCount: graphData.nodes.length,
+      valueNodesCount: nodes.length,
+    };
+  }, [graphData, selectedNodeId, showAllNodes]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  // Synchronize internal React Flow state when graphData updates
+  // Synchronize internal React Flow state when graphData or toggle updates
   useEffect(() => {
     setNodes(initialNodes);
     setEdges(initialEdges);
@@ -130,6 +163,31 @@ export const GraphCanvas: React.FC<Props> = ({
 
   return (
     <div className="w-full h-full min-h-[500px] relative bg-[#0b0f19]">
+      {/* Top Filter Overlay Toggle */}
+      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-gray-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-gray-800 text-xs shadow-xl">
+        <span className="text-gray-400 font-medium">Filter View:</span>
+        <button
+          onClick={() => setShowAllNodes(false)}
+          className={`px-2.5 py-1 rounded font-semibold transition ${
+            !showAllNodes
+              ? "bg-brand-600 text-white shadow-sm"
+              : "text-gray-400 hover:text-white hover:bg-gray-800"
+          }`}
+        >
+          🎯 Value Transfers Only ({valueNodesCount - 1})
+        </button>
+        <button
+          onClick={() => setShowAllNodes(true)}
+          className={`px-2.5 py-1 rounded font-semibold transition ${
+            showAllNodes
+              ? "bg-purple-600 text-white shadow-sm"
+              : "text-gray-400 hover:text-white hover:bg-gray-800"
+          }`}
+        >
+          👁️ Include Contract Calls ({totalNodesCount - 1})
+        </button>
+      </div>
+
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -154,6 +212,7 @@ export const GraphCanvas: React.FC<Props> = ({
             if (data?.entityType === "MIXER") return "#e11d48";
             if (data?.entityType === "EXCHANGE") return "#10b981";
             if (data?.entityType === "BRIDGE") return "#06b6d4";
+            if (data?.entityType === "SERVICE") return "#a855f7";
             return "#4b5563";
           }}
           maskColor="rgba(11, 15, 25, 0.8)"

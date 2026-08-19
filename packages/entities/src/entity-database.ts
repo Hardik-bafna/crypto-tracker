@@ -1,14 +1,19 @@
 import { Entity, EntityAddressMapping, EntityType } from "@crypto-tracer/types";
 import { SEED_ENTITIES } from "./seed-data";
+import { OFACSanctionsService } from "./ofac-service";
 
 export class EntityDatabase {
   private entities: Map<string, Entity> = new Map();
   private addressToEntity: Map<string, { entity: Entity; mapping: EntityAddressMapping }> = new Map();
+  private ofacService: OFACSanctionsService;
 
   constructor(initialEntities: Entity[] = SEED_ENTITIES) {
+    this.ofacService = new OFACSanctionsService();
     for (const entity of initialEntities) {
       this.registerEntity(entity);
     }
+    // Asynchronously fetch live Treasury OFAC SDN list
+    this.ofacService.loadLiveSanctionsList().catch(() => {});
   }
 
   registerEntity(entity: Entity): void {
@@ -26,11 +31,21 @@ export class EntityDatabase {
   }
 
   getEntityByAddress(address: string): { entity: Entity; mapping: EntityAddressMapping } | undefined {
-    return this.addressToEntity.get(address.toLowerCase());
+    const cleanAddr = address.toLowerCase().trim();
+    let match = this.addressToEntity.get(cleanAddr);
+    
+    // If not found in local seed map, check against OFAC SDN List
+    if (!match && this.ofacService.isSanctioned(cleanAddr)) {
+      const ofacEntity = this.ofacService.createOfacEntity(cleanAddr);
+      this.registerEntity(ofacEntity);
+      match = this.addressToEntity.get(cleanAddr);
+    }
+
+    return match;
   }
 
   isAddressKnown(address: string): boolean {
-    return this.addressToEntity.has(address.toLowerCase());
+    return !!this.getEntityByAddress(address);
   }
 
   isMixer(address: string): boolean {

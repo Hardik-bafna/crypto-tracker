@@ -48,6 +48,9 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
   } else if (entityType === "EXCHANGE") {
     badgeColor = "bg-emerald-950/80 text-emerald-300 border-emerald-500";
     EntityIcon = Landmark;
+  } else if (entityType === "SERVICE") {
+    badgeColor = "bg-purple-950/80 text-purple-300 border-purple-500";
+    EntityIcon = Coins;
   } else if (entityType === "KNOWN_ILLICIT" || entityType === "SCAM") {
     badgeColor = "bg-red-950 text-red-300 border-red-600 animate-pulse";
     EntityIcon = AlertTriangle;
@@ -67,6 +70,8 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
     ? "border-emerald-600"
     : entityType === "BRIDGE"
     ? "border-cyan-600"
+    : entityType === "SERVICE"
+    ? "border-purple-600"
     : "border-gray-800 hover:border-gray-600";
 
   return (
