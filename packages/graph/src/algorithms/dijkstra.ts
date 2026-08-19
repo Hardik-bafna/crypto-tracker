@@ -1,6 +1,33 @@
 import { TransactionGraph } from "../graph-model";
 import { GraphEdge, PathResult } from "@crypto-tracer/types";
 
+export function compositeForensicWeight(
+  edge: GraphEdge,
+  graph: TransactionGraph
+): number {
+  const amount = parseFloat(edge.amount) || 0;
+  // Volume Component: Larger transfer volume -> lower edge cost (prefer main money flow over dust)
+  const volumeCost = 1.0 / (Math.log10(amount + 1) + 1);
+
+  // Risk & Entity Component: High risk/obfuscation nodes -> lower cost (prefer paths through mixers/bridges/CEX)
+  const targetNode = graph.getNode(edge.target);
+  let riskScore = targetNode?.riskScore || 0;
+  if (targetNode?.entityType === "MIXER" || targetNode?.tags?.includes("SANCTIONED")) {
+    riskScore = Math.max(riskScore, 90);
+  } else if (targetNode?.entityType === "BRIDGE" || edge.isCrossChain) {
+    riskScore = Math.max(riskScore, 70);
+  } else if (targetNode?.entityType === "EXCHANGE") {
+    riskScore = Math.max(riskScore, 60);
+  }
+  const riskCost = 1.0 / (riskScore + 1.0);
+
+  // Base Hop Penalty: Prevents infinite cycles and keeps path bounded
+  const baseHopCost = 0.2;
+
+  // Composite Weight Formula (50% Volume, 30% Risk, 20% Base Hop)
+  return 0.5 * volumeCost + 0.3 * riskCost + 0.2 * baseHopCost;
+}
+
 export function dijkstraShortestPath(
   graph: TransactionGraph,
   sourceAddress: string,
@@ -14,8 +41,8 @@ export function dijkstraShortestPath(
     return null;
   }
 
-  // Default weight is 1.0 per hop
-  const getWeight = weightFn || (() => 1.0);
+  // Use Composite Forensic Weight function by default if no weightFn is provided
+  const getWeight = weightFn || ((e: GraphEdge) => compositeForensicWeight(e, graph));
 
   const distances = new Map<string, number>();
   const previousNode = new Map<string, string>();

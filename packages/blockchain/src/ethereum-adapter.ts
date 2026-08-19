@@ -126,58 +126,10 @@ export class EthereumAdapter extends BaseBlockchainAdapter {
 
     // Attempt live Ethereum Mainnet indexer fetch if not in local store
     if (hashes.length === 0 && this.validateAddress(address)) {
-      try {
-        const res = await fetch(`https://eth.blockscout.com/api/v2/addresses/${address}/transactions`);
-        if (res.ok) {
-          const data: any = await res.json();
-          if (data.items && Array.isArray(data.items) && data.items.length > 0) {
-            const liveTxs: NormalizedTransaction[] = data.items.slice(0, 20).map((tx: any) => {
-              const wei = tx.value || "0";
-              let ethVal = "0.0000";
-              try {
-                ethVal = (Number(BigInt(wei) / 10000000000n) / 1e8).toFixed(4);
-              } catch {}
-              
-              const tokenTransfers: TokenTransfer[] = (tx.token_transfers || []).map((tt: any) => {
-                const tokenSymbol = tt.token?.symbol || "ERC20";
-                const tokenDecimals = tt.token?.decimals ? parseInt(tt.token.decimals) : 18;
-                let formattedAmount = "0";
-                try {
-                  const val = tt.total?.value || "0";
-                  formattedAmount = (Number(BigInt(val)) / Math.pow(10, tokenDecimals)).toFixed(4);
-                } catch {}
-                
-                return {
-                  tokenAddress: tt.token?.address || "0x0",
-                  symbol: tokenSymbol,
-                  amount: tt.total?.value || "0",
-                  formattedAmount,
-                  from: tt.from?.hash || address,
-                  to: tt.to?.hash || "0x0000000000000000000000000000000000000000",
-                };
-              });
-
-              return {
-                id: `eth-${tx.hash}`,
-                chain: "ethereum",
-                txHash: tx.hash,
-                blockNumber: tx.block_number,
-                timestamp: new Date(tx.timestamp || Date.now()),
-                from: [tx.from?.hash || address],
-                to: [tx.to?.hash || "0x0000000000000000000000000000000000000000"],
-                asset: "ETH",
-                amount: wei,
-                formattedAmount: `${ethVal} ETH`,
-                status: "confirmed",
-                isContractCall: !!tx.to?.is_contract,
-                tokenTransfers: tokenTransfers.length > 0 ? tokenTransfers : undefined,
-                metadata: { source: "mainnet_live" },
-              };
-            });
-            this.seedData(liveTxs);
-          }
-        }
-      } catch {}
+      const liveTxs = await this.fetchLiveAddressTransactions(address);
+      if (liveTxs.length > 0) {
+        this.seedData(liveTxs);
+      }
     }
 
     // Re-read hashes after potential live fetch
@@ -389,5 +341,138 @@ export class EthereumAdapter extends BaseBlockchainAdapter {
     ];
 
     this.seedData(dynamicTxs);
+  }
+
+  private async fetchLiveAddressTransactions(address: string): Promise<NormalizedTransaction[]> {
+    const liveTxs: NormalizedTransaction[] = [];
+    const lower = address.toLowerCase();
+
+    try {
+      // 1. Fetch main native transactions up to 3 pages using next_page_params pagination
+      let url: string | null = `https://eth.blockscout.com/api/v2/addresses/${address}/transactions`;
+      let pageCount = 0;
+      const MAX_PAGES = 3;
+
+      while (url && pageCount < MAX_PAGES) {
+        pageCount++;
+        const res = await fetch(url);
+        if (!res.ok) break;
+        const data: any = await res.json();
+        if (!data.items || !Array.isArray(data.items) || data.items.length === 0) break;
+
+        for (const tx of data.items) {
+          const wei = tx.value || "0";
+          let ethVal = "0.0000";
+          try {
+            ethVal = (Number(BigInt(wei) / 10000000000n) / 1e8).toFixed(4);
+          } catch {}
+
+          const tokenTransfers: TokenTransfer[] = (tx.token_transfers || []).map((tt: any) => {
+            const tokenSymbol = tt.token?.symbol || "ERC20";
+            const tokenDecimals = tt.token?.decimals ? parseInt(tt.token.decimals) : 18;
+            let formattedAmount = "0";
+            try {
+              const val = tt.total?.value || "0";
+              formattedAmount = (Number(BigInt(val)) / Math.pow(10, tokenDecimals)).toFixed(4);
+            } catch {}
+
+            return {
+              tokenAddress: tt.token?.address || "0x0",
+              symbol: tokenSymbol,
+              amount: tt.total?.value || "0",
+              formattedAmount,
+              from: tt.from?.hash || address,
+              to: tt.to?.hash || "0x0000000000000000000000000000000000000000",
+            };
+          });
+
+          // Asset and amount formatting: prioritize token symbol/amount if native ETH is 0
+          let asset = "ETH";
+          let formattedAmount = `${ethVal} ETH`;
+          if ((ethVal === "0.0000" || wei === "0") && tokenTransfers.length > 0) {
+            asset = tokenTransfers[0].symbol;
+            formattedAmount = `${tokenTransfers[0].formattedAmount} ${tokenTransfers[0].symbol}`;
+          }
+
+          liveTxs.push({
+            id: `eth-${tx.hash}`,
+            chain: "ethereum",
+            txHash: tx.hash,
+            blockNumber: tx.block_number,
+            timestamp: new Date(tx.timestamp || Date.now()),
+            from: [tx.from?.hash || address],
+            to: [tx.to?.hash || "0x0000000000000000000000000000000000000000"],
+            asset,
+            amount: wei,
+            formattedAmount,
+            status: "confirmed",
+            isContractCall: !!tx.to?.is_contract,
+            tokenTransfers: tokenTransfers.length > 0 ? tokenTransfers : undefined,
+            metadata: { source: "mainnet_live" },
+          });
+        }
+
+        // Build next page URL using Blockscout next_page_params if available
+        if (data.next_page_params && typeof data.next_page_params === "object") {
+          const params = new URLSearchParams(data.next_page_params as Record<string, string>).toString();
+          url = `https://eth.blockscout.com/api/v2/addresses/${address}/transactions?${params}`;
+        } else {
+          url = null;
+        }
+      }
+
+      // 2. Fetch dedicated Token Transfers endpoint to capture ERC-20 token transfers
+      try {
+        const tokenRes = await fetch(`https://eth.blockscout.com/api/v2/addresses/${address}/token-transfers`);
+        if (tokenRes.ok) {
+          const tokenData: any = await tokenRes.json();
+          if (tokenData.items && Array.isArray(tokenData.items)) {
+            for (const item of tokenData.items) {
+              const txHash = item.tx_hash || item.transaction_hash;
+              if (!txHash) continue;
+              if (liveTxs.some((t) => t.txHash.toLowerCase() === txHash.toLowerCase())) continue;
+
+              const tokenSymbol = item.token?.symbol || "ERC20";
+              const tokenDecimals = item.token?.decimals ? parseInt(item.token.decimals) : 18;
+              let formattedAmt = "0";
+              try {
+                const val = item.total?.value || "0";
+                formattedAmt = (Number(BigInt(val)) / Math.pow(10, tokenDecimals)).toFixed(4);
+              } catch {}
+
+              const tt: TokenTransfer = {
+                tokenAddress: item.token?.address || "0x0",
+                symbol: tokenSymbol,
+                amount: item.total?.value || "0",
+                formattedAmount: formattedAmt,
+                from: item.from?.hash || address,
+                to: item.to?.hash || "0x0000000000000000000000000000000000000000",
+              };
+
+              liveTxs.push({
+                id: `eth-token-${txHash}`,
+                chain: "ethereum",
+                txHash,
+                blockNumber: item.block_number,
+                timestamp: new Date(item.timestamp || Date.now()),
+                from: [item.from?.hash || address],
+                to: [item.to?.hash || "0x0000000000000000000000000000000000000000"],
+                asset: tokenSymbol,
+                amount: item.total?.value || "0",
+                formattedAmount: `${formattedAmt} ${tokenSymbol}`,
+                status: "confirmed",
+                isContractCall: true,
+                tokenTransfers: [tt],
+                metadata: { source: "mainnet_live_token" },
+              });
+            }
+          }
+        }
+      } catch {}
+    } catch (e: any) {
+      console.error(`[EthereumAdapter] Live fetch error for ${address}: ${e?.message}`);
+    }
+
+    return liveTxs;
   }
 }
