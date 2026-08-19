@@ -42,8 +42,25 @@ export const CustomEdge: React.FC<EdgeProps> = ({
     targetY,
   });
 
-  const edgeData = data as unknown as CustomEdgeData;
+  const edgeData = data as unknown as CustomEdgeData & { isDimmed?: boolean; isPathHighlighted?: boolean };
   const isCrossChain = edgeData?.isCrossChain;
+  const isPath = edgeData?.isPathHighlighted;
+  const isDimmed = edgeData?.isDimmed;
+
+  let strokeColor = "#4b5563";
+  let strokeWidth = 1.5;
+
+  if (isPath) {
+    strokeColor = "#22d3ee";
+    strokeWidth = 3;
+  } else if (selected) {
+    strokeColor = "#6366f1";
+    strokeWidth = 2.5;
+  } else if (isCrossChain) {
+    strokeColor = "#06b6d4";
+  }
+
+  const opacityStyle = isDimmed ? { opacity: 0.15 } : { opacity: 1 };
 
   return (
     <>
@@ -52,12 +69,9 @@ export const CustomEdge: React.FC<EdgeProps> = ({
         markerEnd={markerEnd}
         style={{
           ...style,
-          strokeWidth: selected ? 2.5 : 1.5,
-          stroke: selected
-            ? "#6366f1"
-            : isCrossChain
-            ? "#06b6d4"
-            : "#4b5563",
+          ...opacityStyle,
+          strokeWidth,
+          stroke: strokeColor,
           strokeDasharray: isCrossChain ? "5,5" : undefined,
         }}
       />
@@ -67,9 +81,12 @@ export const CustomEdge: React.FC<EdgeProps> = ({
             position: "absolute",
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
             pointerEvents: "all",
+            ...opacityStyle,
           }}
           className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-medium shadow-lg backdrop-blur-md cursor-pointer transition-transform hover:scale-110 ${
-            selected
+            isPath
+              ? "bg-cyan-900 text-cyan-200 border border-cyan-400 font-bold ring-2 ring-cyan-400"
+              : selected
               ? "bg-brand-600 text-white ring-2 ring-brand-400 font-bold"
               : isCrossChain
               ? "bg-cyan-950/90 text-cyan-300 border border-cyan-700"
