@@ -3,6 +3,21 @@ import { z } from "zod";
 export const RiskLevelEnum = z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]);
 export type RiskLevel = z.infer<typeof RiskLevelEnum>;
 
+export const EvidenceChainItemSchema = z.object({
+  evidenceId: z.string(),
+  ruleId: z.string(),
+  patternType: z.string(),
+  explanation: z.string(),
+  transactionHashes: z.array(z.string()).default([]),
+  wallets: z.array(z.string()).default([]),
+  entityName: z.string().optional(),
+  entityType: z.string().optional(),
+  timestamp: z.coerce.date(),
+  severity: z.string(),
+  confidence: z.number().min(0).max(1),
+});
+export type EvidenceChainItem = z.infer<typeof EvidenceChainItemSchema>;
+
 export const RiskFactorSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -12,6 +27,7 @@ export const RiskFactorSchema = z.object({
   description: z.string(),
   severity: RiskLevelEnum,
   evidenceIds: z.array(z.string()).default([]),
+  evidenceChain: z.array(EvidenceChainItemSchema).optional(),
 });
 export type RiskFactor = z.infer<typeof RiskFactorSchema>;
 

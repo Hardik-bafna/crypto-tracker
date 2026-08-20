@@ -1,0 +1,48 @@
+import { z } from "zod";
+export const GraphNodeSchema = z.object({
+    id: z.string(),
+    address: z.string(),
+    label: z.string(),
+    type: z.enum(["address", "entity", "contract", "cluster"]).default("address"),
+    chain: z.string(),
+    entityId: z.string().optional(),
+    entityName: z.string().optional(),
+    entityType: z.string().optional(),
+    riskScore: z.number().min(0).max(100).optional(),
+    clusterId: z.string().optional(),
+    balance: z.string().optional(),
+    formattedBalance: z.string().optional(),
+    txCount: z.number().optional(),
+    firstSeen: z.coerce.date().optional(),
+    lastSeen: z.coerce.date().optional(),
+    tags: z.array(z.string()).optional(),
+    isTarget: z.boolean().optional(),
+    isSuspect: z.boolean().optional(),
+    hopLevel: z.number().optional(),
+    metadata: z.record(z.unknown()).optional(),
+});
+export const GraphEdgeSchema = z.object({
+    id: z.string(),
+    source: z.string(),
+    target: z.string(),
+    txHash: z.string(),
+    asset: z.string(),
+    amount: z.string(),
+    formattedAmount: z.string(),
+    valueUsd: z.number().optional(),
+    timestamp: z.coerce.date(),
+    chain: z.string(),
+    fee: z.string().optional(),
+    isTokenTransfer: z.boolean().optional(),
+    tokenSymbol: z.string().optional(),
+    isContractCall: z.boolean().optional(),
+    confidence: z.number().min(0).max(1).default(1.0),
+    isCrossChain: z.boolean().optional(),
+    bridgeName: z.string().optional(),
+    metadata: z.record(z.unknown()).optional(),
+});
+export const GraphDataSchema = z.object({
+    nodes: z.array(GraphNodeSchema),
+    edges: z.array(GraphEdgeSchema),
+});
+//# sourceMappingURL=graph.js.map

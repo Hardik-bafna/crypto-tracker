@@ -44,6 +44,7 @@ export const CustomEdge: React.FC<EdgeProps> = ({
 
   const edgeData = data as unknown as CustomEdgeData & { isDimmed?: boolean; isPathHighlighted?: boolean };
   const isCrossChain = edgeData?.isCrossChain;
+  const bridgeName = edgeData?.bridgeName;
   const isPath = edgeData?.isPathHighlighted;
   const isDimmed = edgeData?.isDimmed;
 
@@ -57,13 +58,34 @@ export const CustomEdge: React.FC<EdgeProps> = ({
     strokeColor = "#6366f1";
     strokeWidth = 2.5;
   } else if (isCrossChain) {
-    strokeColor = "#06b6d4";
+    strokeColor = "#a855f7";
+    strokeWidth = 2.5;
   }
 
   const opacityStyle = isDimmed ? { opacity: 0.15 } : { opacity: 1 };
 
+  // Build label text — show bridge name for cross-chain edges
+  const amountLabel = edgeData?.formattedAmount || `${edgeData?.amount || ""} ${edgeData?.asset || ""}`;
+  const labelText = isCrossChain && bridgeName
+    ? `🌉 ${amountLabel}`
+    : amountLabel;
+
   return (
     <>
+      {/* For cross-chain edges, render a secondary glow path underneath */}
+      {isCrossChain && !isDimmed && (
+        <BaseEdge
+          path={edgePath}
+          style={{
+            ...style,
+            strokeWidth: strokeWidth + 4,
+            stroke: "#a855f7",
+            opacity: 0.15,
+            strokeDasharray: "8,6",
+            filter: "blur(3px)",
+          }}
+        />
+      )}
       <BaseEdge
         path={edgePath}
         markerEnd={markerEnd}
@@ -72,7 +94,7 @@ export const CustomEdge: React.FC<EdgeProps> = ({
           ...opacityStyle,
           strokeWidth,
           stroke: strokeColor,
-          strokeDasharray: isCrossChain ? "5,5" : undefined,
+          strokeDasharray: isCrossChain ? "8,4" : undefined,
         }}
       />
       <EdgeLabelRenderer>
@@ -89,14 +111,28 @@ export const CustomEdge: React.FC<EdgeProps> = ({
               : selected
               ? "bg-brand-600 text-white ring-2 ring-brand-400 font-bold"
               : isCrossChain
-              ? "bg-cyan-950/90 text-cyan-300 border border-cyan-700"
+              ? "bg-purple-950/90 text-purple-200 border border-purple-500 ring-1 ring-purple-500/50"
               : "bg-gray-900/90 text-gray-300 border border-gray-700 hover:border-gray-500"
           }`}
-          title={`Tx: ${edgeData?.txHash || "N/A"}`}
+          title={`Tx: ${edgeData?.txHash || "N/A"}${bridgeName ? ` | Bridge: ${bridgeName}` : ""}`}
         >
-          {edgeData?.formattedAmount || `${edgeData?.amount || ""} ${edgeData?.asset || ""}`}
+          {labelText}
         </div>
+        {/* Bridge name badge below the edge label for cross-chain */}
+        {isCrossChain && bridgeName && !isDimmed && (
+          <div
+            style={{
+              position: "absolute",
+              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY + 18}px)`,
+              pointerEvents: "none",
+            }}
+            className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-purple-900/80 text-purple-300 border border-purple-700/60 tracking-wider"
+          >
+            {bridgeName}
+          </div>
+        )}
       </EdgeLabelRenderer>
     </>
   );
 };
+

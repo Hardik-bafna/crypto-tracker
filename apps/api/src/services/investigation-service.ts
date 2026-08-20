@@ -12,7 +12,7 @@ import {
 import { BlockchainAdapterFactory, SYNTHETIC_DEMO_CASES } from "@crypto-tracer/blockchain";
 import { GraphBuilder, TransactionGraph, nHopTraversal } from "@crypto-tracer/graph";
 import { EntityDatabase, AttributionEngine } from "@crypto-tracer/entities";
-import { PatternEngine } from "@crypto-tracer/analysis";
+import { PatternEngine, AlternativeExplanationEngine } from "@crypto-tracer/analysis";
 import { ClusterEngine } from "@crypto-tracer/clustering";
 import { RiskEngine } from "@crypto-tracer/risk";
 import { ReportGenerator } from "@crypto-tracer/ai";
@@ -99,6 +99,9 @@ export class InvestigationService {
     // 2. Suspicious Pattern Detection
     const { patterns, evidence } = this.patternEngine.analyze(graph);
 
+    // 2b. Alternative Explanation Analysis
+    const alternativeExplanations = AlternativeExplanationEngine.analyze(patterns);
+
     // 3. Wallet Clustering
     const allTxs = await adapter.getAddressTransactions(req.target, { limit: 50 });
     const clusters = this.clusterEngine.clusterWallets(allTxs, chain);
@@ -152,6 +155,7 @@ export class InvestigationService {
       graph: graph.toJSON(),
       risk,
       patterns,
+      alternativeExplanations,
       entities: this.entityDb.getAllEntities(),
       clusters,
       evidence,

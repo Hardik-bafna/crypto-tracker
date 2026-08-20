@@ -32,6 +32,23 @@ export interface CustomNodeData {
   [key: string]: unknown;
 }
 
+// Chain-specific color accents for the left border indicator
+const CHAIN_COLORS: Record<string, { border: string; dot: string; label: string }> = {
+  ethereum: { border: "border-l-blue-500", dot: "bg-blue-500", label: "text-blue-400" },
+  bitcoin: { border: "border-l-orange-500", dot: "bg-orange-500", label: "text-orange-400" },
+  polygon: { border: "border-l-purple-500", dot: "bg-purple-500", label: "text-purple-400" },
+  arbitrum: { border: "border-l-sky-500", dot: "bg-sky-500", label: "text-sky-400" },
+  optimism: { border: "border-l-red-500", dot: "bg-red-500", label: "text-red-400" },
+  bsc: { border: "border-l-yellow-500", dot: "bg-yellow-500", label: "text-yellow-400" },
+  avalanche: { border: "border-l-rose-500", dot: "bg-rose-500", label: "text-rose-400" },
+  solana: { border: "border-l-gradient-to-r from-purple-500 to-teal-500", dot: "bg-teal-500", label: "text-teal-400" },
+};
+
+const getChainStyle = (chain: string) => {
+  const normalized = chain?.toLowerCase() || "";
+  return CHAIN_COLORS[normalized] || { border: "border-l-gray-600", dot: "bg-gray-600", label: "text-gray-500" };
+};
+
 export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
   const nodeData = data as unknown as CustomNodeData;
   const isTarget = nodeData.isTarget;
@@ -40,6 +57,7 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
   const isDimmed = nodeData.isDimmed;
   const isPath = nodeData.isPathHighlighted;
   const isNeighbor = nodeData.isNeighborHighlighted;
+  const chainStyle = getChainStyle(nodeData.chain);
 
   // Human readable label for entity types
   let entityLabel = "Unknown Wallet";
@@ -102,7 +120,7 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
 
   return (
     <div
-      className={`relative min-w-[200px] max-w-[260px] rounded-xl bg-gray-900/95 backdrop-blur-md p-3.5 shadow-2xl border transition-all duration-200 cursor-pointer ${borderClass} ${opacityClass}`}
+      className={`relative min-w-[200px] max-w-[260px] rounded-xl bg-gray-900/95 backdrop-blur-md p-3.5 shadow-2xl border border-l-[3px] ${chainStyle.border} transition-all duration-200 cursor-pointer ${borderClass} ${opacityClass}`}
     >
       <Handle
         type="target"
@@ -145,7 +163,10 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
           <Coins className="w-3 h-3 text-gray-500" />
           <span>{nodeData.balance || "Active"}</span>
         </div>
-        <span className="text-gray-500 uppercase">{nodeData.chain}</span>
+        <div className="flex items-center gap-1">
+          <span className={`w-1.5 h-1.5 rounded-full ${chainStyle.dot}`} />
+          <span className={`uppercase ${chainStyle.label}`}>{nodeData.chain}</span>
+        </div>
       </div>
 
       <Handle

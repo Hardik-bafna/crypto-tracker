@@ -1,0 +1,1 @@
+{"version":3,"file":"ai-investigator.d.ts","sourceRoot":"","sources":["ai-investigator.ts"],"names":[],"mappings":"AAAA,OAAO,EACL,cAAc,EACd,eAAe,EAEf,aAAa,EACd,MAAM,sBAAsB,CAAC;AAC9B,OAAO,EAAE,cAAc,EAAE,MAAM,mBAAmB,CAAC;AAInD,qBAAa,cAAc;IACb,OAAO,CAAC,cAAc;gBAAd,cAAc,EAAE,cAAc;IAE5C,YAAY,CAAC,OAAO,EAAE,cAAc,EAAE,aAAa,CAAC,EAAE,aAAa,GAAG,OAAO,CAAC,eAAe,CAAC;CA4FrG"}

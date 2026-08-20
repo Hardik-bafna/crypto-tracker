@@ -1,0 +1,1 @@
+{"version":3,"file":"cluster-engine.d.ts","sourceRoot":"","sources":["cluster-engine.ts"],"names":[],"mappings":"AAAA,OAAO,EACL,aAAa,EACb,qBAAqB,EACtB,MAAM,sBAAsB,CAAC;AAK9B,qBAAa,aAAa;IACxB,cAAc,CACZ,YAAY,EAAE,qBAAqB,EAAE,EACrC,KAAK,GAAE,MAAkB,GACxB,aAAa,EAAE;CA0GnB"}

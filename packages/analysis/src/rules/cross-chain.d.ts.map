@@ -1,0 +1,1 @@
+{"version":3,"file":"cross-chain.d.ts","sourceRoot":"","sources":["cross-chain.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,gBAAgB,EAAE,MAAM,sBAAsB,CAAC;AACxD,OAAO,EAAE,cAAc,EAAE,MAAM,yBAAyB,CAAC;AACzD,OAAO,EAAE,sBAAsB,EAAY,MAAM,sBAAsB,CAAC;AAExE,wBAAgB,gBAAgB,CAC9B,KAAK,EAAE,gBAAgB,EACvB,QAAQ,EAAE,cAAc,GACvB,sBAAsB,EAAE,CA+C1B"}
