@@ -186,8 +186,8 @@ CryptoTrace™ includes three pre-loaded synthetic narcotics case files simulati
 ### Installation
 Clone the repository and install all workspace dependencies:
 ```bash
-git clone https://github.com/Hardik-bafna/narabsdk.git
-cd narabsdk
+git clone https://github.com/Hardik-bafna/crypto-tracker.git
+cd crypto-tracker
 make install
 ```
 
@@ -246,7 +246,7 @@ make test
 ## 📂 Monorepo Repository Structure
 
 ```
-narabsdk/
+crypto-tracker/
 ├── Makefile                    # Developer automation scripts (install, dev, test, build)
 ├── flake.nix                   # Nix reproducible devshell configuration
 ├── docker-compose.yml          # Containerized multi-service deployment spec
